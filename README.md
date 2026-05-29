@@ -1,58 +1,276 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# AI-FMS — AI-Powered Financial Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A full-featured, enterprise-grade Financial & HR Management System built with **Laravel 13**, **Inertia.js v2**, **React 18**, **Tailwind CSS v3**, and **ShadCN UI (Radix UI)**. Designed for small-to-medium businesses managing accounting, payroll, HR, assets, budgets, and more — with an AI assistant powered by OpenAI.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Tech Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Layer | Technology |
+|-------|-----------|
+| Backend | Laravel 13, PHP 8.3 |
+| Frontend | React 18, Inertia.js v2 |
+| Styling | Tailwind CSS v3, ShadCN UI, Radix UI |
+| Charts | Recharts |
+| Auth | Laravel Sanctum + Spatie Permissions (RBAC) |
+| AI | OpenAI PHP SDK |
+| PDF | barryvdh/laravel-dompdf |
+| Excel | Maatwebsite Excel |
+| Activity Log | Spatie Laravel Activitylog |
+| Media | Spatie Laravel Medialibrary |
+| Backup | Spatie Laravel Backup |
+| Queue | Redis (Predis) |
+| Routing | Ziggy (Laravel → JS routes) |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Modules
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Accounting
+- Chart of accounts with account groups
+- Journal entries — create, post, void, reverse
+- General ledger with opening balance
+- Trial balance
+- Bank reconciliation
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Invoicing
+- Sales invoices, purchase invoices, proforma, credit notes, recurring invoices
+- GST / TDS tax rates
+- Payment recording and allocation
+- PDF invoice generation and email sending
+- Invoice templates
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### Expenses
+- Expense claims with categories and policies
+- Submit → Approve → Reject workflow
+- Receipt attachments
 
-## Agentic Development
+### Banking
+- Multiple bank accounts
+- Transaction import and categorization
+- Bank reconciliation
+- Fund transfers between accounts
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### Payroll & HR
+- **Departments** — create/manage, headcount tracking
+- **Salary Structures** — dynamic earnings + deductions component builder
+- **Employee HRIS Dossier** — 9-tab profile:
+  - Overview, Personal details, Job & reporting
+  - Emergency contacts, Dependents
+  - Documents (with file upload — PDF/JPG/PNG)
+  - Education & work experience history
+  - Company asset tracking
+  - Onboarding / offboarding lifecycle tasks
+  - HR notes (general, performance, disciplinary, warning, commendation)
+- **Attendance** — monthly grid view, bulk daily marking, per-employee report
+- **Leave Management** — types, allocations, apply, approve/reject/cancel, balance view with donut charts
+- Payroll runs and payslip PDF generation
+- Payroll reports
+
+### Tax
+- GST returns and reports
+- TDS deductions and reports
+- Tax settings
+
+### Assets
+- Asset categories and registration
+- Depreciation (straight-line), manual depreciation runs
+- Maintenance scheduling and history
+
+### Vendors & Customers
+- Full vendor/customer profiles
+- Customer statements and outstanding reports
+- Vendor payment tracking
+
+### Budgets
+- Budget creation with line items and cost centers
+- Approval workflow
+- Variance analysis
+- AI-powered forecasting
+
+### Reports
+- Profit & Loss
+- Balance Sheet
+- Cash Flow Statement
+- Custom financial reports
+- Excel export
+
+### AI Assistant
+- Chat-based financial assistant
+- Transaction analysis
+- Revenue / expense forecasting
+- Powered by OpenAI GPT
+
+### Settings
+- Company profile and logo
+- Role-based access control (12 roles, 170+ permissions)
+- Email notifications
+- 15 third-party integrations (Razorpay, Stripe, AWS S3, SMTP, Tally, Slack, WhatsApp, etc.)
+- Audit logs
+- Automated backups
+
+---
+
+## Requirements
+
+- PHP >= 8.3
+- MySQL >= 8.0
+- Node.js >= 20
+- Composer >= 2.x
+- XAMPP / Laragon / any local server (or production server)
+- OpenAI API key (optional — for AI features)
+
+---
+
+## Installation
+
+### 1. Clone the repository
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/your-username/AI-FMS.git
+cd AI-FMS
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. Install PHP dependencies
 
-## Contributing
+```bash
+composer install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 3. Install Node dependencies
 
-## Code of Conduct
+```bash
+npm install
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 4. Configure environment
 
-## Security Vulnerabilities
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Edit `.env` and set your database credentials:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=ai_fms
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Optional — for AI features
+OPENAI_API_KEY=sk-...
+
+# Optional — for file storage on S3
+FILESYSTEM_DISK=local
+```
+
+### 5. Run migrations and seed demo data
+
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+### 6. Create storage symlink
+
+```bash
+php artisan storage:link
+```
+
+### 7. Build frontend assets
+
+```bash
+npm run build
+```
+
+### 8. Start the development server
+
+```bash
+# All-in-one (server + queue + logs + vite hot reload)
+composer dev
+
+# Or start individually:
+php artisan serve
+npm run dev
+```
+
+Visit `http://127.0.0.1:8000`
+
+---
+
+## Demo Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | super@aifms.com | Admin@123 |
+| Company Owner | owner@aifms.com | Admin@123 |
+| Finance Manager | finance@aifms.com | Admin@123 |
+| Accountant | accountant@aifms.com | Admin@123 |
+| Auditor | auditor@aifms.com | Admin@123 |
+| HR Manager | hr@aifms.com | Admin@123 |
+| Employee | employee@aifms.com | Admin@123 |
+| Analyst | analyst@aifms.com | Admin@123 |
+
+---
+
+## Project Structure
+
+```
+AI-FMS/
+├── app/
+│   ├── Http/Controllers/
+│   │   ├── Auth/                    # Login, register, 2FA, password reset
+│   │   ├── Accounting/              # Accounts, journals, ledger
+│   │   ├── Payroll/                 # Employees, attendance, leave, HR, departments
+│   │   └── ...                      # Invoicing, banking, assets, budgets, etc.
+│   └── Models/                      # 52 Eloquent models
+├── database/
+│   ├── migrations/                  # 23 migration files (dated 2026_MM_DD)
+│   └── seeders/                     # Demo data (company, 8 users, full transactions)
+├── resources/
+│   └── js/
+│       ├── components/
+│       │   ├── ui/                  # 19 reusable UI components (ShadCN-based)
+│       │   └── layout/              # Sidebar, Navbar, AppLayout
+│       └── Pages/                   # 95+ Inertia page components
+│           ├── Accounting/
+│           ├── Invoicing/
+│           ├── Payroll/
+│           │   ├── Employees/       # HRIS dossier (Show, Edit, Index, Create)
+│           │   ├── Attendance/      # Grid, Mark, Report
+│           │   └── Leave/           # Types, Allocations, Apply, Balance, Index
+│           ├── Assets/
+│           ├── Budget/
+│           ├── Reports/
+│           ├── Settings/
+│           └── AI/
+├── routes/
+│   ├── web.php                      # All web routes
+│   └── api.php                      # Sanctum-protected REST API (v1)
+└── PROGRESS.md                      # Detailed build progress tracker
+```
+
+---
+
+## Key Features
+
+- **Multi-company** architecture with company-scoped data isolation
+- **Role-based access control** — 12 roles, 170+ granular permissions via Spatie
+- **Dark mode** — full light/dark theme support via CSS variables
+- **File uploads** — employee documents (PDF, JPG, PNG) stored on disk with storage link
+- **AI-powered** — chat assistant, financial analysis, and forecasting via OpenAI
+- **PDF generation** — payslips and invoices via DomPDF
+- **Excel export** — reports exportable via Maatwebsite Excel
+- **Audit trail** — every action logged via Spatie Activitylog
+- **Toast notifications** — all server flash messages shown as real-time toasts
+- **Installer wizard** — guided setup flow for first-time deployment
+- **REST API** — full Sanctum-protected API for mobile and third-party integrations
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT — free for personal and commercial use.

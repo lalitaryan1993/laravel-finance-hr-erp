@@ -2,7 +2,7 @@
 
 > Laravel 13 + Inertia.js + React + Tailwind CSS + ShadCN UI  
 > Enterprise Financial Management System  
-> Last Updated: 2026-05-29
+> Last Updated: 2026-05-29 (Session 3)
 
 ---
 
@@ -55,6 +55,7 @@
 | soft deletes | ✅ | users.deleted_at |
 | sanctum tokens | ✅ | personal_access_tokens |
 | **HR — attendance & leave** | ✅ | leave_types, leave_allocations, leave_requests, attendances |
+| **HRIS — core employee sub-tables** | ✅ | employee_emergency_contacts, employee_documents, employee_educations, employee_experiences, employee_dependents, employee_assets, employee_lifecycle_tasks, employee_notes; + 14 new columns on employees |
 
 ### Models
 | Model | Status | Notes |
@@ -66,12 +67,20 @@
 | Invoice, InvoiceItem, Payment | ✅ | |
 | Expense, ExpenseCategory | ✅ | |
 | BankAccount, BankTransaction | ✅ | |
-| Employee | ✅ | `$appends` includes `full_name`, `bank_account_number`, `bank_ifsc` via `bank_details` JSON |
+| Employee | ✅ | `$appends` includes `full_name`, `bank_account_number`, `bank_ifsc` via `bank_details` JSON; reporting_manager relationship; HRIS child relationships |
 | Department, SalaryStructure | ✅ | Department.fillable updated with `description` |
 | LeaveType | ✅ | carry_forward, requires_approval, pay_status, days_per_year |
 | LeaveAllocation | ✅ | allocated_days / used_days / balance_days per employee/year |
 | LeaveRequest | ✅ | pending/approved/rejected/cancelled; approve() deducts balance |
 | Attendance | ✅ | 8 statuses; forDate/forMonth scopes; statusLabel() static |
+| EmployeeEmergencyContact | ✅ | is_primary flag; cascades on employee delete |
+| EmployeeDocument | ✅ | document_type, number, issue/expiry dates, file_path, status |
+| EmployeeEducation | ✅ | qualification, institution, field_of_study, years, grade |
+| EmployeeExperience | ✅ | employer, title, dates, last_salary, reason_for_leaving |
+| EmployeeDependent | ✅ | name, relationship, DOB, is_nominee |
+| EmployeeAsset | ✅ | issued/returned tracking with condition and status |
+| EmployeeLifecycleTask | ✅ | onboarding/offboarding tasks, due_date, completed_at |
+| EmployeeNote | ✅ | typed notes (general/performance/disciplinary), visibility, created_by |
 | PayrollRun, Payslip | ✅ | uses `gross_earnings`/`net_pay` (not `gross_salary`/`net_salary`) |
 | Asset, AssetCategory, AssetDepreciation, AssetMaintenance | ✅ | uses `category_id`, `book_value`, `depreciation_start_date` |
 | Budget, BudgetLine | ✅ | uses `budget_type`, `spent_amount`, `remaining_amount`, `allocated_amount` |
@@ -108,9 +117,10 @@
 | BankTransactionController | ✅ | index + reconciliation + transfers |
 | PayrollController | ✅ | index (HR dashboard stats) + structures CRUD + process + runPayroll + payslips + reports |
 | EmployeeController | ✅ | Full CRUD; update() handles bank_details JSON |
-| AttendanceController | ✅ | index (monthly grid) + mark + saveBulk (updateOrCreate) + report |
-| LeaveController | ✅ | types CRUD + allocations + apply + approve/reject/cancel + balance |
+| AttendanceController | ✅ | index (monthly grid) + mark + saveBulk (updateOrCreate) + report (employee selector, graceful no-param) |
+| LeaveController | ✅ | types CRUD + allocations + apply + approve/reject/cancel + balance (passes employees list, graceful no-param) |
 | DepartmentController | ✅ | Full CRUD; delete blocked if employees assigned |
+| EmployeeHrController | ✅ | updateHr + CRUD for all 8 HRIS sub-records (emergency contacts, documents, education, experience, dependents, assets, lifecycle tasks, notes) |
 | TaxController | ✅ | gst + tds + reports + settings |
 | AssetController | ✅ | Full CRUD + depreciation + runDepreciation + maintenance |
 | VendorController | ✅ | Full CRUD + payments |
@@ -156,13 +166,13 @@
 | checkbox.jsx | ✅ | @radix-ui/react-checkbox |
 | label.jsx | ✅ | @radix-ui/react-label |
 | confirm-dialog.jsx | ✅ | @radix-ui/react-alert-dialog; exports ConfirmDialog helper |
-| date-picker.jsx | ✅ | react-day-picker + @radix-ui/react-popover |
+| date-picker.jsx | ✅ | react-day-picker + @radix-ui/react-popover; guards against `Invalid Date` (MySQL `0000-00-00`) via `isNaN(d.getTime())` |
 | combobox.jsx | ✅ | cmdk Command/CommandInput/CommandList/CommandItem |
 
 ### Layout Components
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Sidebar.jsx | ✅ | Updated: Payroll & HR section with Departments, Attendance, Leave nav items |
+| Sidebar.jsx | ✅ | Payroll & HR section: 15 items including Leave Balance, Attendance Report |
 | Navbar.jsx | ✅ | |
 | AppLayout.jsx | ✅ | Flash → react-hot-toast wired (success/error/warning) |
 
@@ -242,16 +252,19 @@
 | Payroll/PayslipPDF.jsx | ✅ | full_name, gross_earnings, employee_pf, net_pay |
 | Payroll/Structures.jsx | ✅ | **Rebuilt**: dynamic earnings/deductions component builder with add/remove rows |
 | Payroll/Reports.jsx | ✅ | |
-| Payroll/Employees/Index.jsx | ✅ | |
+| Payroll/Employees/Index.jsx | ✅ | **HRIS**: HR stats, richer filters, manager/type columns, profile completeness indicator |
 | Payroll/Employees/Create.jsx | ✅ | |
-| Payroll/Employees/Show.jsx | ✅ | gross_earnings, net_pay |
-| Payroll/Employees/Edit.jsx | ✅ | Bank details section added; full_name |
-| Payroll/Departments.jsx | ✅ | **New**: card grid, create/edit/delete dialogs, employee count |
-| Payroll/Attendance/Index.jsx | ✅ | **New**: monthly grid per employee (P/A/H/L/W/OD chips), month navigator, dept filter |
-| Payroll/Attendance/Mark.jsx | ✅ | **New**: bulk daily marking table — status, check-in, check-out, notes per employee |
-| Payroll/Leave/Types.jsx | ✅ | **New**: leave type CRUD with carry-forward, pay-status, requires-approval |
-| Payroll/Leave/Index.jsx | ✅ | **New**: requests list with approve/reject/cancel actions and status filter |
-| Payroll/Leave/Apply.jsx | ✅ | **New**: apply form with weekday calculator and leave type info card |
+| Payroll/Employees/Show.jsx | ✅ | **HRIS**: tabbed HR dossier — Overview, Emergency Contacts, Documents, Education, Experience, Dependents, Assets, Tasks, Notes |
+| Payroll/Employees/Edit.jsx | ✅ | **HRIS**: HR personal section, job/reporting section, exit details section; DatePicker fix |
+| Payroll/Departments.jsx | ✅ | Card grid, create/edit/delete dialogs, employee count |
+| Payroll/Attendance/Index.jsx | ✅ | Monthly grid per employee (P/A/H/L/W/OD chips), month navigator, dept filter |
+| Payroll/Attendance/Mark.jsx | ✅ | Bulk daily marking — status, check-in, check-out, notes; live attendance rate bar |
+| Payroll/Attendance/Report.jsx | ✅ | **New**: per-employee monthly report, employee selector, day-by-day table with stats |
+| Payroll/Leave/Types.jsx | ✅ | Leave type CRUD — color bars, icon-based attributes, carry-forward, pay-status |
+| Payroll/Leave/Index.jsx | ✅ | Requests list with approve/reject/cancel, pending callout banner, status filter |
+| Payroll/Leave/Apply.jsx | ✅ | Apply form with weekday calculator and leave type info card |
+| Payroll/Leave/Allocations.jsx | ✅ | **New**: allocations table, individual & bulk dialogs, usage progress bars, year nav |
+| Payroll/Leave/Balance.jsx | ✅ | **New**: per-employee balance cards with SVG donut rings, leave history table |
 
 ### Tax
 | Page | Status | Notes |
@@ -355,27 +368,43 @@
 | Payroll deductions | Hardcoded PF (12%) and PT (₹200) — SalaryStructure components stored but not yet used in runPayroll() |
 | Report data | P&L / Balance Sheet / Cash Flow use real journal data but no fiscal year filtering |
 | Email sending | Invoice send() exists but email templates not tested |
-| File uploads | Expense receipts stored but download requires `/storage` symlink |
-| Leave allocations page | Balance.jsx and Allocations.jsx pages not yet built (controller exists) |
+| File uploads | Expense receipts stored but download requires `/storage` symlink; EmployeeDocument file_path stored but upload UI not wired |
+| HRIS migration | `2026_05_29_000001_add_core_hris_to_employees.php` must be run — `php artisan migrate` |
 
 ---
 
-## 2026-05-29 HRIS Foundation Upgrade
+## 2026-05-29 — Session Changelog
 
-| Area | Status | Notes |
-|------|--------|-------|
-| HRIS design docs | Complete | Added `docs/superpowers/specs/2026-05-29-core-employee-hris-design.md` and implementation plan |
-| HRIS reference docs | Complete | Added `docs/hris-reference.md` with tables, models, routes, UI, tests, and future slices |
-| Employee HR fields | Complete | Added gender, marital status, blood group, personal email, addresses, reporting manager, work location, probation, confirmation, notice period, and exit details |
-| HR sub-record tables | Complete | Emergency contacts, documents, education, experience, dependents, assets, lifecycle tasks, and notes |
-| Employee model relationships | Complete | Added HRIS child relationships and reporting manager relationship |
-| Employee HR controller | Complete | Nested company-scoped CRUD for all HRIS child records and lifecycle task completion |
-| Employee list | Complete | Added HR stats, richer filters, manager/type columns, and profile completeness indicator |
-| Employee profile | Complete | Rebuilt as tabbed HR dossier with add dialogs for HRIS child records |
-| Employee edit | Complete | Added HR personal, job/reporting, and exit sections |
-| HRIS tests | Complete | Added focused feature tests in `tests/Feature/Payroll/CoreEmployeeHrisTest.php` |
+### HRIS Foundation (Codex)
 
-Remaining future HR slices: attendance/leave policy engine, payroll component engine, performance management, recruitment, and compliance reporting.
+| Area | Status | Detail |
+|------|--------|--------|
+| Design & reference docs | ✅ | `docs/superpowers/specs/2026-05-29-core-employee-hris-design.md`, `docs/hris-reference.md` |
+| Employee HR fields | ✅ | +14 columns: gender, marital_status, blood_group, personal_email, current/permanent_address, reporting_manager_id, work_location, probation_end_date, confirmation_date, notice_period_days, exit_date, exit_reason, rehire_eligible, exit_notes |
+| 8 HRIS sub-tables | ✅ | employee_emergency_contacts, _documents, _educations, _experiences, _dependents, _assets, _lifecycle_tasks, _notes |
+| 8 new Models | ✅ | EmployeeEmergencyContact, EmployeeDocument, EmployeeEducation, EmployeeExperience, EmployeeDependent, EmployeeAsset, EmployeeLifecycleTask, EmployeeNote |
+| Employee model | ✅ | Added 8 child `hasMany` relations + `reportingManager` / `directReports` self-referential |
+| EmployeeHrController | ✅ | `updateHr()` + store/update/destroy for all 8 child record types; company-scoped authorization |
+| Employee/Index.jsx | ✅ | HR stats bar, employment type filter, manager column, profile completeness badge |
+| Employee/Show.jsx | ✅ | 9-tab HR dossier: Overview · Emergency Contacts · Documents · Education · Experience · Dependents · Assets · Tasks · Notes |
+| Employee/Edit.jsx | ✅ | 3 new sections: HR Personal (gender/blood/address), Job & Reporting (manager/location/probation), Exit Details |
+| Feature tests | ✅ | `tests/Feature/Payroll/CoreEmployeeHrisTest.php` covering HR update + all sub-record CRUD |
+
+### HR Pages & Bug Fixes (Session 3)
+
+| Area | Status | Detail |
+|------|--------|--------|
+| Leave/Allocations.jsx | ✅ | New page: allocations table, individual & bulk allocation dialogs, usage progress bars, year navigation |
+| Leave/Balance.jsx | ✅ | New page: per-employee balance cards with SVG donut rings, leave history, employee selector |
+| Attendance/Report.jsx | ✅ | New page: per-employee monthly report, employee selector, day-by-day stats |
+| Leave/Types.jsx | ✅ | Improved: color-accent bars, proper icons (ShieldCheck/RefreshCw/CheckCircle2), summary stat cards |
+| SelectItem empty-string bug | ✅ | Fixed across all HR pages — Radix forbids `value=""`, replaced with `value="all"` sentinel |
+| DatePicker Invalid Date | ✅ | Fixed: `isNaN(d.getTime())` guard prevents crash when DB returns `"0000-00-00"` |
+| LeaveController.balance() | ✅ | Now passes `employees` list and works without `employee_id` (shows picker instead of 422) |
+| AttendanceController.report() | ✅ | Now passes `employees` list and works without `employee_id` |
+| Sidebar | ✅ | Added "Leave Balance" and "Attendance Report" nav items |
+
+Remaining future HR slices: attendance/leave policy engine, payroll component engine, performance management, recruitment, compliance reporting.
 
 ---
 
@@ -398,13 +427,14 @@ Remaining future HR slices: attendance/leave policy engine, payroll component en
 | Phase | Status | Details |
 |-------|--------|---------|
 | Project Setup | ✅ | All config, dependencies installed |
-| Database & Models | ✅ | 44 models, 21 migrations (HR tables added), all column names verified |
-| Backend Controllers | ✅ | 23 controllers — AttendanceController, LeaveController, DepartmentController added |
-| Frontend Components | ✅ | 19 UI components |
-| Frontend Pages | ✅ | 90+ pages — HR module: Departments, Attendance (grid+mark), Leave (types+requests+apply) |
+| Database & Models | ✅ | 52 models, 23 migrations — HR tables + 8 HRIS sub-tables + 14 new employee columns |
+| Backend Controllers | ✅ | 25 controllers — AttendanceController, LeaveController, DepartmentController, EmployeeHrController added |
+| Frontend Components | ✅ | 19 UI components (DatePicker Invalid-Date fix) |
+| Frontend Pages | ✅ | 95+ pages — full HR module: Departments, Attendance (grid+mark+report), Leave (types+allocations+requests+apply+balance), Employee HRIS dossier |
 | Seeders | ✅ | DatabaseSeeder + DemoDataSeeder run clean |
 | Flash Notifications | ✅ | All Laravel flash messages show as toasts |
-| **HR System** | ✅ | **Full HR system: Departments, Attendance tracking, Leave management with approval workflow** |
+| **HRIS Foundation** | ✅ | **8 sub-tables, 9-tab employee dossier, reporting manager hierarchy, lifecycle tasks, feature tests** |
+| **HR System** | ✅ | **Full HR: Departments, Attendance tracking, Leave management with approval & balance workflow** |
 | **Integrations** | ✅ | **15 integrations with real test-connection API calls** |
 | **Purchase Orders** | ✅ | **Full edit (header + items), date-range filters, total value stat** |
 | **Salary Structures** | ✅ | **Dynamic component builder (earnings/deductions), JSON stored** |

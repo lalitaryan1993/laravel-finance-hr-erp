@@ -14,6 +14,7 @@ use App\Models\EmployeeLifecycleTask;
 use App\Models\EmployeeNote;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class EmployeeHrController extends Controller
 {
@@ -63,7 +64,23 @@ class EmployeeHrController extends Controller
     public function storeDocument(Request $request, Employee $employee)
     {
         $this->authorizeEmployee($request, $employee);
-        $employee->documents()->create($this->withCompany($request, $request->validate($this->documentRules())));
+
+        $data = $request->validate([
+            'document_type'   => 'required|string|max:50',
+            'document_number' => 'nullable|string|max:100',
+            'issue_date'      => 'nullable|date',
+            'expiry_date'     => 'nullable|date|after_or_equal:issue_date',
+            'file'            => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
+            'status'          => 'nullable|string|in:pending,verified,rejected,expired',
+            'notes'           => 'nullable|string|max:1000',
+        ]);
+
+        if ($request->hasFile('file')) {
+            $data['file_path'] = $request->file('file')->store("employee-docs/{$employee->id}", 'public');
+        }
+        unset($data['file']);
+
+        $employee->documents()->create($this->withCompany($request, $data));
 
         return back()->with('success', 'Employee document added.');
     }
@@ -71,14 +88,41 @@ class EmployeeHrController extends Controller
     public function updateDocument(Request $request, Employee $employee, EmployeeDocument $document)
     {
         $this->authorizeRecord($request, $employee, $document);
-        $document->update($request->validate($this->documentRules()));
+
+        $data = $request->validate([
+            'document_type'   => 'required|string|max:50',
+            'document_number' => 'nullable|string|max:100',
+            'issue_date'      => 'nullable|date',
+            'expiry_date'     => 'nullable|date|after_or_equal:issue_date',
+            'file'            => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
+            'status'          => 'nullable|string|in:pending,verified,rejected,expired',
+            'notes'           => 'nullable|string|max:1000',
+        ]);
+
+        if ($request->hasFile('file')) {
+            if ($document->file_path) {
+                Storage::disk('public')->delete($document->file_path);
+            }
+            $data['file_path'] = $request->file('file')->store("employee-docs/{$employee->id}", 'public');
+        }
+        unset($data['file']);
+
+        $document->update($data);
 
         return back()->with('success', 'Employee document updated.');
     }
 
     public function destroyDocument(Request $request, Employee $employee, EmployeeDocument $document)
     {
-        return $this->destroyRecord($request, $employee, $document, 'Employee document removed.');
+        $this->authorizeRecord($request, $employee, $document);
+
+        if ($document->file_path) {
+            Storage::disk('public')->delete($document->file_path);
+        }
+
+        $document->delete();
+
+        return back()->with('success', 'Employee document removed.');
     }
 
     public function storeEducation(Request $request, Employee $employee)
