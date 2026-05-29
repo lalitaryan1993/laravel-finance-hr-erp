@@ -1,156 +1,98 @@
-# AI-FMS — AI-Powered Financial Management System
+<div align="center">
 
-A full-featured, enterprise-grade Financial & HR Management System built with **Laravel 13**, **Inertia.js v2**, **React 18**, **Tailwind CSS v3**, and **ShadCN UI (Radix UI)**. Designed for small-to-medium businesses managing accounting, payroll, HR, assets, budgets, and more — with an AI assistant powered by OpenAI.
+# 🧾 AI-FMS
+### AI-Powered Financial & HR Management System
+
+[![Laravel](https://img.shields.io/badge/Laravel-13.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![Inertia.js](https://img.shields.io/badge/Inertia.js-v2-9553E9?style=for-the-badge)](https://inertiajs.com)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v3-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
+[![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://php.net)
+
+A full-featured, open-source ERP for small & medium businesses.  
+Manage **Accounting · Payroll · HRIS · Invoicing · Assets · Budgets · Tax** — all in one place, with an AI assistant powered by OpenAI.
+
+[Live Demo](#demo-credentials) · [Installation](#installation) · [Features](#modules) · [Tech Stack](#tech-stack)
+
+</div>
 
 ---
 
-## Tech Stack
+## ✨ What's Inside
+
+| Module | Features |
+|--------|----------|
+| 📒 **Accounting** | Double-entry journals, Chart of accounts, Ledger, Trial balance |
+| 🧾 **Invoicing** | Sales, Purchase, Proforma, Credit notes, GST/TDS, PDF, Payments |
+| 💸 **Expenses** | Claims, Policies, Submit → Approve → Reject workflow |
+| 🏦 **Banking** | Multi-account, Transactions, Reconciliation, Fund transfers |
+| 👥 **Payroll & HR** | Salary structures, Payslip PDF, Payroll runs, HR dashboard |
+| 🏢 **HRIS** | 9-tab employee dossier — Docs, Education, Experience, Assets, Leave, Tasks, Notes |
+| 📅 **Attendance** | Monthly grid, Bulk marking, Per-employee report |
+| 🌴 **Leave** | Types, Allocations, Apply/Approve, Balance with donut charts |
+| 🖥️ **Assets** | Categories, Depreciation, Maintenance scheduling |
+| 📦 **Purchase Orders** | Full PO lifecycle, GRN, vendor linking |
+| 📊 **Budgets** | Line items, Cost centers, Variance analysis, AI forecasting |
+| 📈 **Reports** | P&L, Balance Sheet, Cash Flow, Excel export |
+| 🤖 **AI Assistant** | Chat, Financial analysis, Forecasting via OpenAI |
+| ⚙️ **Settings** | RBAC (170+ permissions), 15 integrations, Audit log, Backups |
+
+---
+
+## 🛠 Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Backend | Laravel 13, PHP 8.3 |
 | Frontend | React 18, Inertia.js v2 |
-| Styling | Tailwind CSS v3, ShadCN UI, Radix UI |
+| UI | Tailwind CSS v3, ShadCN UI, Radix UI |
 | Charts | Recharts |
-| Auth | Laravel Sanctum + Spatie Permissions (RBAC) |
+| Auth | Laravel Sanctum + Spatie Permissions |
 | AI | OpenAI PHP SDK |
 | PDF | barryvdh/laravel-dompdf |
 | Excel | Maatwebsite Excel |
-| Activity Log | Spatie Laravel Activitylog |
-| Media | Spatie Laravel Medialibrary |
+| Activity Log | Spatie Activitylog |
 | Backup | Spatie Laravel Backup |
 | Queue | Redis (Predis) |
-| Routing | Ziggy (Laravel → JS routes) |
+| JS Routes | Ziggy |
 
 ---
 
-## Modules
-
-### Accounting
-- Chart of accounts with account groups
-- Journal entries — create, post, void, reverse
-- General ledger with opening balance
-- Trial balance
-- Bank reconciliation
-
-### Invoicing
-- Sales invoices, purchase invoices, proforma, credit notes, recurring invoices
-- GST / TDS tax rates
-- Payment recording and allocation
-- PDF invoice generation and email sending
-- Invoice templates
-
-### Expenses
-- Expense claims with categories and policies
-- Submit → Approve → Reject workflow
-- Receipt attachments
-
-### Banking
-- Multiple bank accounts
-- Transaction import and categorization
-- Bank reconciliation
-- Fund transfers between accounts
-
-### Payroll & HR
-- **Departments** — create/manage, headcount tracking
-- **Salary Structures** — dynamic earnings + deductions component builder
-- **Employee HRIS Dossier** — 9-tab profile:
-  - Overview, Personal details, Job & reporting
-  - Emergency contacts, Dependents
-  - Documents (with file upload — PDF/JPG/PNG)
-  - Education & work experience history
-  - Company asset tracking
-  - Onboarding / offboarding lifecycle tasks
-  - HR notes (general, performance, disciplinary, warning, commendation)
-- **Attendance** — monthly grid view, bulk daily marking, per-employee report
-- **Leave Management** — types, allocations, apply, approve/reject/cancel, balance view with donut charts
-- Payroll runs and payslip PDF generation
-- Payroll reports
-
-### Tax
-- GST returns and reports
-- TDS deductions and reports
-- Tax settings
-
-### Assets
-- Asset categories and registration
-- Depreciation (straight-line), manual depreciation runs
-- Maintenance scheduling and history
-
-### Vendors & Customers
-- Full vendor/customer profiles
-- Customer statements and outstanding reports
-- Vendor payment tracking
-
-### Budgets
-- Budget creation with line items and cost centers
-- Approval workflow
-- Variance analysis
-- AI-powered forecasting
-
-### Reports
-- Profit & Loss
-- Balance Sheet
-- Cash Flow Statement
-- Custom financial reports
-- Excel export
-
-### AI Assistant
-- Chat-based financial assistant
-- Transaction analysis
-- Revenue / expense forecasting
-- Powered by OpenAI GPT
-
-### Settings
-- Company profile and logo
-- Role-based access control (12 roles, 170+ permissions)
-- Email notifications
-- 15 third-party integrations (Razorpay, Stripe, AWS S3, SMTP, Tally, Slack, WhatsApp, etc.)
-- Audit logs
-- Automated backups
-
----
-
-## Requirements
+## ⚙️ Requirements
 
 - PHP >= 8.3
 - MySQL >= 8.0
 - Node.js >= 20
 - Composer >= 2.x
-- XAMPP / Laragon / any local server (or production server)
-- OpenAI API key (optional — for AI features)
+- OpenAI API key *(optional — for AI features)*
 
 ---
 
-## Installation
+## 🚀 Installation
 
-### 1. Clone the repository
+### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-username/AI-FMS.git
-cd AI-FMS
+git clone https://github.com/lalitaryan1993/laravel-finance-hr-erp.git
+cd laravel-finance-hr-erp
 ```
 
-### 2. Install PHP dependencies
+### 2. Install dependencies
 
 ```bash
 composer install
-```
-
-### 3. Install Node dependencies
-
-```bash
 npm install
 ```
 
-### 4. Configure environment
+### 3. Configure environment
 
 ```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
-Edit `.env` and set your database credentials:
+Update `.env` with your database and optional API keys:
 
 ```env
 DB_CONNECTION=mysql
@@ -160,48 +102,38 @@ DB_DATABASE=ai_fms
 DB_USERNAME=root
 DB_PASSWORD=
 
-# Optional — for AI features
+# Optional — AI features
 OPENAI_API_KEY=sk-...
-
-# Optional — for file storage on S3
-FILESYSTEM_DISK=local
 ```
 
-### 5. Run migrations and seed demo data
+### 4. Migrate and seed
 
 ```bash
 php artisan migrate
 php artisan db:seed
 ```
 
-### 6. Create storage symlink
+### 5. Storage symlink
 
 ```bash
 php artisan storage:link
 ```
 
-### 7. Build frontend assets
+### 6. Build and run
 
 ```bash
+# Build frontend
 npm run build
-```
 
-### 8. Start the development server
-
-```bash
-# All-in-one (server + queue + logs + vite hot reload)
+# Start (server + queue + vite hot reload — all in one)
 composer dev
-
-# Or start individually:
-php artisan serve
-npm run dev
 ```
 
-Visit `http://127.0.0.1:8000`
+Visit **http://127.0.0.1:8000**
 
 ---
 
-## Demo Credentials
+## 🔐 Demo Credentials
 
 | Role | Email | Password |
 |------|-------|----------|
@@ -216,61 +148,61 @@ Visit `http://127.0.0.1:8000`
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-AI-FMS/
+laravel-finance-hr-erp/
 ├── app/
-│   ├── Http/Controllers/
-│   │   ├── Auth/                    # Login, register, 2FA, password reset
-│   │   ├── Accounting/              # Accounts, journals, ledger
-│   │   ├── Payroll/                 # Employees, attendance, leave, HR, departments
-│   │   └── ...                      # Invoicing, banking, assets, budgets, etc.
-│   └── Models/                      # 52 Eloquent models
+│   ├── Http/Controllers/       # 25 controllers
+│   └── Models/                 # 52 Eloquent models
 ├── database/
-│   ├── migrations/                  # 23 migration files (dated 2026_MM_DD)
-│   └── seeders/                     # Demo data (company, 8 users, full transactions)
-├── resources/
-│   └── js/
-│       ├── components/
-│       │   ├── ui/                  # 19 reusable UI components (ShadCN-based)
-│       │   └── layout/              # Sidebar, Navbar, AppLayout
-│       └── Pages/                   # 95+ Inertia page components
-│           ├── Accounting/
-│           ├── Invoicing/
-│           ├── Payroll/
-│           │   ├── Employees/       # HRIS dossier (Show, Edit, Index, Create)
-│           │   ├── Attendance/      # Grid, Mark, Report
-│           │   └── Leave/           # Types, Allocations, Apply, Balance, Index
-│           ├── Assets/
-│           ├── Budget/
-│           ├── Reports/
-│           ├── Settings/
-│           └── AI/
+│   ├── migrations/             # 23 migrations (dated 2026_MM_DD)
+│   └── seeders/                # Demo company, users & transactions
+├── resources/js/
+│   ├── components/ui/          # 19 reusable ShadCN components
+│   ├── components/layout/      # Sidebar, Navbar, AppLayout
+│   └── Pages/                  # 95+ Inertia page components
+│       ├── Accounting/
+│       ├── Invoicing/
+│       ├── Payroll/
+│       │   ├── Employees/      # HRIS dossier (9-tab profile)
+│       │   ├── Attendance/     # Grid · Mark · Report
+│       │   └── Leave/          # Types · Allocations · Balance
+│       ├── Assets/
+│       ├── Budget/
+│       ├── Reports/
+│       ├── Settings/
+│       └── AI/
 ├── routes/
-│   ├── web.php                      # All web routes
-│   └── api.php                      # Sanctum-protected REST API (v1)
-└── PROGRESS.md                      # Detailed build progress tracker
+│   ├── web.php                 # All web routes
+│   └── api.php                 # Sanctum REST API (v1)
+└── PROGRESS.md                 # Detailed build progress tracker
 ```
 
 ---
 
-## Key Features
+## 🌟 Key Highlights
 
-- **Multi-company** architecture with company-scoped data isolation
-- **Role-based access control** — 12 roles, 170+ granular permissions via Spatie
-- **Dark mode** — full light/dark theme support via CSS variables
-- **File uploads** — employee documents (PDF, JPG, PNG) stored on disk with storage link
-- **AI-powered** — chat assistant, financial analysis, and forecasting via OpenAI
-- **PDF generation** — payslips and invoices via DomPDF
-- **Excel export** — reports exportable via Maatwebsite Excel
-- **Audit trail** — every action logged via Spatie Activitylog
-- **Toast notifications** — all server flash messages shown as real-time toasts
-- **Installer wizard** — guided setup flow for first-time deployment
-- **REST API** — full Sanctum-protected API for mobile and third-party integrations
+- **Multi-company** — company-scoped data isolation out of the box
+- **RBAC** — 12 roles, 170+ granular permissions via Spatie
+- **Dark Mode** — full light/dark theme via CSS variables
+- **File Uploads** — employee documents stored on disk (PDF, JPG, PNG)
+- **AI Assistant** — chat, financial analysis & forecasting via OpenAI
+- **PDF Generation** — payslips & invoices via DomPDF
+- **Excel Export** — all reports exportable
+- **Audit Trail** — every action logged via Spatie Activitylog
+- **Toast Notifications** — server flash messages as real-time toasts
+- **REST API** — full Sanctum-protected API for mobile/integrations
+- **Installer Wizard** — guided first-time setup flow
 
 ---
 
-## License
+## 📄 License
 
-MIT — free for personal and commercial use.
+MIT License — free for personal and commercial use.
+
+---
+
+<div align="center">
+  Built with ❤️ using Laravel + React + Inertia.js
+</div>
