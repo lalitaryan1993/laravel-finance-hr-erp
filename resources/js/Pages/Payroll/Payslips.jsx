@@ -52,7 +52,7 @@ export default function Payslips({ payslips = {}, filters = {} }) {
                                     </TableRow>
                                 ) : list.map((slip) => (
                                     <TableRow key={slip.id} className="cursor-pointer hover:bg-muted/50"
-                                        onClick={() => router.visit(`/payroll/payslips/${slip.id}`)}>
+                                        onClick={() => router.visit(`/payroll/payslips/${slip.id}/pdf`)}>
                                         <TableCell>
                                             <div className="font-medium">{slip.employee?.full_name}</div>
                                             <div className="text-xs text-muted-foreground">{slip.employee?.employee_code}</div>

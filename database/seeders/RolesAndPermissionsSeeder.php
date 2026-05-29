@@ -95,7 +95,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'payroll.view', 'payroll.create', 'payroll.edit', 'payroll.delete', 'payroll.process',
             'expenses.view', 'expenses.approve',
             'reports.view',
-            'settings.view', 'settings.manage_users',
+            'settings.manage_users',
         ],
 
         // Branch operations — create invoices, manage local expenses

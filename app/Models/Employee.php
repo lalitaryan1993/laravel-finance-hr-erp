@@ -12,7 +12,7 @@ class Employee extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'uuid', 'company_id', 'branch_id', 'department_id', 'user_id',
+        'uuid', 'company_id', 'branch_id', 'department_id', 'user_id', 'photo',
         'employee_code', 'first_name', 'last_name', 'email', 'phone',
         'gender', 'marital_status', 'blood_group', 'personal_email',
         'designation', 'date_of_joining', 'date_of_leaving', 'employment_type',

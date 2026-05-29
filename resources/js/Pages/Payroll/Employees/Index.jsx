@@ -1,13 +1,12 @@
 import { useState } from 'react'
-import { Head, router, useForm } from '@inertiajs/react'
+import { Head, router } from '@inertiajs/react'
 import AppLayout from '@/components/layout/AppLayout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
     AlertCircle, Briefcase, FileWarning, Plus, Search, ShieldCheck,
     UserCheck, Users,
@@ -50,29 +49,11 @@ function CompletenessBadge({ completeness }) {
 }
 
 export default function EmployeesIndex({ employees = {}, departments = [], filters = {}, stats = {} }) {
-    const [showCreate, setShowCreate] = useState(false)
     const [search, setSearch] = useState(filters.search ?? '')
     const list = employees.data ?? []
 
-    const { data, setData, post, processing, reset, errors } = useForm({
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        department_id: '',
-        designation: '',
-        date_of_joining: '',
-        employment_type: 'full_time',
-        basic_salary: '',
-    })
-
     const applyFilters = (next = {}) => {
         router.get('/payroll/employees', { ...filters, search, ...next }, { preserveState: true, preserveScroll: true })
-    }
-
-    const submit = (e) => {
-        e.preventDefault()
-        post('/payroll/employees', { onSuccess: () => { reset(); setShowCreate(false) } })
     }
 
     return (
@@ -84,7 +65,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], filte
                         <h1 className="text-2xl font-bold">Employees</h1>
                         <p className="text-muted-foreground text-sm mt-1">{employees.total ?? 0} employees</p>
                     </div>
-                    <Button onClick={() => setShowCreate(true)}>
+                    <Button onClick={() => router.visit('/payroll/employees/create')}>
                         <Plus className="w-4 h-4 mr-2" /> Add Employee
                     </Button>
                 </div>
@@ -163,6 +144,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], filte
                                         <TableCell>
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="w-8 h-8">
+                                                    {emp.photo && <AvatarImage src={`/storage/${emp.photo}`} alt={emp.full_name} />}
                                                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
                                                         {getInitials(emp.full_name)}
                                                     </AvatarFallback>
@@ -194,65 +176,6 @@ export default function EmployeesIndex({ employees = {}, departments = [], filte
                 </Card>
             </div>
 
-            <Dialog open={showCreate} onOpenChange={setShowCreate}>
-                <DialogContent className="max-w-lg">
-                    <DialogHeader><DialogTitle>Add New Employee</DialogTitle></DialogHeader>
-                    <form onSubmit={submit} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                                <label className="text-sm font-medium">First Name *</label>
-                                <Input value={data.first_name} onChange={(e) => setData('first_name', e.target.value)} />
-                                {errors.first_name && <p className="text-xs text-destructive">{errors.first_name}</p>}
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-sm font-medium">Last Name</label>
-                                <Input value={data.last_name} onChange={(e) => setData('last_name', e.target.value)} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-sm font-medium">Email</label>
-                                <Input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} />
-                                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-sm font-medium">Phone</label>
-                                <Input value={data.phone} onChange={(e) => setData('phone', e.target.value)} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-sm font-medium">Department</label>
-                                <select value={data.department_id} onChange={(e) => setData('department_id', e.target.value)} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
-                                    <option value="">Select...</option>
-                                    {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                                </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-sm font-medium">Designation</label>
-                                <Input value={data.designation} onChange={(e) => setData('designation', e.target.value)} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-sm font-medium">Date of Joining</label>
-                                <Input type="date" value={data.date_of_joining} onChange={(e) => setData('date_of_joining', e.target.value)} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-sm font-medium">Employment Type</label>
-                                <select value={data.employment_type} onChange={(e) => setData('employment_type', e.target.value)} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
-                                    <option value="full_time">Full Time</option>
-                                    <option value="part_time">Part Time</option>
-                                    <option value="contract">Contract</option>
-                                    <option value="intern">Intern</option>
-                                </select>
-                            </div>
-                            <div className="col-span-2 space-y-1">
-                                <label className="text-sm font-medium">Basic Salary</label>
-                                <Input type="number" step="0.01" min="0" value={data.basic_salary} onChange={(e) => setData('basic_salary', e.target.value)} />
-                            </div>
-                        </div>
-                        <div className="flex justify-end gap-3">
-                            <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
-                            <Button type="submit" loading={processing}>Add Employee</Button>
-                        </div>
-                    </form>
-                </DialogContent>
-            </Dialog>
         </AppLayout>
     )
 }

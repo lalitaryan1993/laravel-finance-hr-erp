@@ -135,7 +135,12 @@ class AuthController extends Controller
 
     public function profile()
     {
-        return Inertia::render('Profile/Index', ['user' => Auth::user()]);
+        $user = Auth::user()->load('company');
+        return Inertia::render('Profile/Index', [
+            'user' => array_merge($user->toArray(), [
+                'roles' => Auth::user()->getRoleNames()->values()->all(),
+            ]),
+        ]);
     }
 
     public function updateProfile(Request $request)
@@ -149,5 +154,17 @@ class AuthController extends Controller
         $user->update($request->only(['name', 'phone', 'timezone', 'locale', 'preferences']));
 
         return back()->with('success', 'Profile updated successfully.');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password'         => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        Auth::user()->update(['password' => Hash::make($request->password)]);
+
+        return back()->with('success', 'Password changed successfully.');
     }
 }

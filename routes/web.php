@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Accounting\AccountController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Banking\BankTransactionController;
 use App\Http\Controllers\Payroll\PayrollController;
 use App\Http\Controllers\Payroll\EmployeeController;
 use App\Http\Controllers\Payroll\EmployeeHrController;
+use App\Http\Controllers\Payroll\EmployeeAccountController;
 use App\Http\Controllers\Payroll\AttendanceController;
 use App\Http\Controllers\Payroll\LeaveController;
 use App\Http\Controllers\Payroll\DepartmentController;
@@ -30,6 +32,7 @@ use App\Http\Controllers\Settings\PermissionController;
 use App\Http\Controllers\AI\AIAssistantController;
 use App\Http\Controllers\Approvals\ApprovalController;
 use App\Http\Controllers\Installer\InstallerController;
+use App\Http\Controllers\Employee\EmployeePortalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -85,6 +88,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ── Profile (own profile — no module permission needed) ────────────────
     Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
     Route::put('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/password', [AuthController::class, 'updatePassword'])->name('profile.password');
+
+    // ── Help & Support ────────────────────────────────────────────────────
+    Route::get('/help', fn () => Inertia::render('Help/Index'))->name('help');
+
+    // ── Employee Self-Service (no module permission — scoped to own data) ─
+    Route::prefix('me')->name('me.')->group(function () {
+        Route::get('/payslips',   [EmployeePortalController::class, 'payslips'])->name('payslips');
+        Route::get('/leave',      [EmployeePortalController::class, 'leave'])->name('leave');
+        Route::post('/leave',     [EmployeePortalController::class, 'storeLeave'])->name('leave.store');
+        Route::get('/attendance', [EmployeePortalController::class, 'attendance'])->name('attendance');
+    });
 
     /*
     |----------------------------------------------------------------------
@@ -224,6 +239,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('employees/{employee}/notes',        [EmployeeHrController::class, 'storeNote'])->name('employees.notes.store')->middleware('can:payroll.edit');
         Route::put('employees/{employee}/notes/{note}',  [EmployeeHrController::class, 'updateNote'])->name('employees.notes.update')->middleware('can:payroll.edit');
         Route::delete('employees/{employee}/notes/{note}',[EmployeeHrController::class, 'destroyNote'])->name('employees.notes.destroy')->middleware('can:payroll.edit');
+
+        // Photo upload
+        Route::post('employees/{employee}/photo', [EmployeeController::class, 'uploadPhoto'])->name('employees.photo')->middleware('can:payroll.edit');
+
+        // Account management
+        Route::post('employees/{employee}/account',                [EmployeeAccountController::class, 'createAccount'])->name('employees.account.create')->middleware('can:payroll.edit');
+        Route::post('employees/{employee}/account/link',           [EmployeeAccountController::class, 'linkAccount'])->name('employees.account.link')->middleware('can:payroll.edit');
+        Route::post('employees/{employee}/account/reset-password', [EmployeeAccountController::class, 'resetPassword'])->name('employees.account.reset-password')->middleware('can:payroll.edit');
+        Route::delete('employees/{employee}/account',              [EmployeeAccountController::class, 'unlinkAccount'])->name('employees.account.unlink')->middleware('can:payroll.edit');
 
         // Salary Structures
         Route::get('structures',               [PayrollController::class, 'structures'])->name('structures');

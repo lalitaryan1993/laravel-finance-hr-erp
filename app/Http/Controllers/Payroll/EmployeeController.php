@@ -6,8 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\SalaryStructure;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Spatie\Permission\Models\Role;
 
 class EmployeeController extends Controller
 {
@@ -90,6 +94,7 @@ class EmployeeController extends Controller
         return Inertia::render('Payroll/Employees/Create', [
             'departments'      => Department::where('company_id', $companyId)->get(['id', 'name']),
             'salaryStructures' => SalaryStructure::where('company_id', $companyId)->get(['id', 'name']),
+            'roles'            => Role::pluck('name')->values()->all(),
         ]);
     }
 
@@ -112,6 +117,11 @@ class EmployeeController extends Controller
             'bank_ifsc'            => 'nullable|string|max:15',
             'employment_type'      => 'nullable|in:full_time,part_time,contract,intern',
             'status'               => 'nullable|in:active,inactive,terminated',
+            // Login account (optional)
+            'create_account'       => 'boolean',
+            'account_email'        => 'nullable|required_if:create_account,true|email|unique:users,email',
+            'account_password'     => 'nullable|required_if:create_account,true|string|min:8',
+            'account_role'         => 'nullable|string|exists:roles,name',
         ]);
 
         $bankDetails = array_filter([
@@ -120,12 +130,31 @@ class EmployeeController extends Controller
         ]);
         unset($data['bank_account_number'], $data['bank_ifsc']);
 
-        Employee::create(array_merge($data, [
-            'company_id'     => $request->user()->company_id,
-            'status'         => $data['status'] ?? 'active',
-            'date_of_joining'=> $data['date_of_joining'] ?? now()->toDateString(),
-            'bank_details'   => $bankDetails ?: null,
+        $createAccount = (bool) ($data['create_account'] ?? false);
+        $accountEmail  = $data['account_email'] ?? null;
+        $accountPass   = $data['account_password'] ?? null;
+        $accountRole   = $data['account_role'] ?? 'employee';
+        unset($data['create_account'], $data['account_email'], $data['account_password'], $data['account_role']);
+
+        $employee = Employee::create(array_merge($data, [
+            'company_id'      => $request->user()->company_id,
+            'status'          => $data['status'] ?? 'active',
+            'date_of_joining' => $data['date_of_joining'] ?? now()->toDateString(),
+            'bank_details'    => $bankDetails ?: null,
         ]));
+
+        if ($createAccount && $accountEmail && $accountPass) {
+            $user = User::create([
+                'name'       => trim("{$employee->first_name} {$employee->last_name}"),
+                'email'      => $accountEmail,
+                'password'   => Hash::make($accountPass),
+                'company_id' => $employee->company_id,
+            ]);
+            if ($accountRole) {
+                $user->assignRole($accountRole);
+            }
+            $employee->update(['user_id' => $user->id]);
+        }
 
         return redirect()->route('payroll.employees.index')->with('success', 'Employee added.');
     }
@@ -147,6 +176,7 @@ class EmployeeController extends Controller
             'assignedAssets',
             'lifecycleTasks',
             'notes.author:id,name',
+            'user:id,name,email,last_login_at,email_verified_at',
         ]);
 
         $employeePayload = $employee->toArray();
@@ -163,6 +193,7 @@ class EmployeeController extends Controller
                 ->where('id', '!=', $employee->id)
                 ->where('status', 'active')
                 ->get(['id', 'first_name', 'last_name', 'employee_code']),
+            'roles' => Role::pluck('name')->values()->all(),
             'hrOptions' => [
                 'documentTypes' => ['aadhaar', 'pan', 'passport', 'driving_license', 'offer_letter', 'contract', 'resume', 'certificate', 'other'],
                 'assetStatuses' => ['issued', 'returned', 'lost', 'damaged'],
@@ -176,6 +207,8 @@ class EmployeeController extends Controller
         $this->authorizeCompanyEmployee(request(), $employee);
         $companyId = $employee->company_id;
 
+        $employee->load('user:id,name,email,last_login_at');
+
         return Inertia::render('Payroll/Employees/Edit', [
             'employee'         => $employee,
             'departments'      => Department::where('company_id', $companyId)->get(['id', 'name']),
@@ -184,6 +217,7 @@ class EmployeeController extends Controller
                 ->where('id', '!=', $employee->id)
                 ->where('status', 'active')
                 ->get(['id', 'first_name', 'last_name', 'employee_code']),
+            'roles'            => Role::pluck('name')->values()->all(),
         ]);
     }
 
@@ -233,6 +267,21 @@ class EmployeeController extends Controller
         ]));
 
         return back()->with('success', 'Employee updated.');
+    }
+
+    public function uploadPhoto(Request $request, Employee $employee)
+    {
+        $this->authorizeCompanyEmployee($request, $employee);
+        $request->validate(['photo' => 'required|image|max:2048']);
+
+        if ($employee->photo) {
+            Storage::disk('public')->delete($employee->photo);
+        }
+
+        $path = $request->file('photo')->store('employees/photos', 'public');
+        $employee->update(['photo' => $path]);
+
+        return back()->with('success', 'Photo updated.');
     }
 
     public function destroy(Employee $employee)

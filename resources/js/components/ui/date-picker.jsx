@@ -1,7 +1,8 @@
 import * as React from 'react';
+import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
-import { DayPicker } from 'react-day-picker';
+import { DayPicker, useNavigation } from 'react-day-picker';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { cn } from '@/lib/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -24,20 +25,92 @@ const PopoverContent = React.forwardRef(({ className, align = 'start', sideOffse
 ));
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
-function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function CalendarCaption({ displayMonth }) {
+    const { goToMonth, nextMonth, previousMonth } = useNavigation();
+    const year  = displayMonth.getFullYear();
+    const month = displayMonth.getMonth();
+    const thisYear = new Date().getFullYear();
+
+    const years = useMemo(
+        () => Array.from({ length: thisYear - 1929 + 3 }, (_, i) => thisYear + 2 - i),
+        [thisYear],
+    );
+
+    const selCls = [
+        'h-7 rounded-md border border-input bg-background',
+        'px-1.5 text-sm font-medium cursor-pointer',
+        'focus:outline-none focus:ring-1 focus:ring-ring',
+        'hover:bg-accent hover:text-accent-foreground transition-colors',
+    ].join(' ');
+
+    const navBtn = cn(
+        buttonVariants({ variant: 'outline' }),
+        'h-7 w-7 p-0 opacity-60 hover:opacity-100 shrink-0',
+    );
+
+    return (
+        <div className="flex items-center justify-between gap-1 px-1 pt-1">
+            <button
+                type="button"
+                disabled={!previousMonth}
+                onClick={() => previousMonth && goToMonth(previousMonth)}
+                className={navBtn}
+            >
+                <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-1">
+                <select
+                    value={month}
+                    onChange={e => goToMonth(new Date(year, +e.target.value, 1))}
+                    className={selCls}
+                >
+                    {MONTHS.map((m, i) => (
+                        <option key={i} value={i}>{m}</option>
+                    ))}
+                </select>
+                <select
+                    value={year}
+                    onChange={e => goToMonth(new Date(+e.target.value, month, 1))}
+                    className={selCls}
+                >
+                    {years.map(y => (
+                        <option key={y} value={y}>{y}</option>
+                    ))}
+                </select>
+            </div>
+
+            <button
+                type="button"
+                disabled={!nextMonth}
+                onClick={() => nextMonth && goToMonth(nextMonth)}
+                className={navBtn}
+            >
+                <ChevronRight className="h-4 w-4" />
+            </button>
+        </div>
+    );
+}
+
+function Calendar({ className, classNames, showOutsideDays = true, fromYear = 1930, toYear, ...props }) {
+    const endYear = toYear ?? new Date().getFullYear() + 2;
     return (
         <DayPicker
             showOutsideDays={showOutsideDays}
+            fromYear={fromYear}
+            toYear={endYear}
             className={cn('p-3', className)}
             classNames={{
                 months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
                 month: 'space-y-4',
                 caption: 'flex justify-center pt-1 relative items-center',
-                caption_label: 'text-sm font-medium',
-                nav: 'space-x-1 flex items-center',
-                nav_button: cn(buttonVariants({ variant: 'outline' }), 'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100'),
-                nav_button_previous: 'absolute left-1',
-                nav_button_next: 'absolute right-1',
+                caption_label: 'hidden',
+                nav: 'hidden',
+                nav_button: 'hidden',
+                nav_button_previous: 'hidden',
+                nav_button_next: 'hidden',
                 table: 'w-full border-collapse space-y-1',
                 head_row: 'flex',
                 head_cell: 'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]',
@@ -53,15 +126,14 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
                 ...classNames,
             }}
             components={{
-                IconLeft: () => <ChevronLeft className="h-4 w-4" />,
-                IconRight: () => <ChevronRight className="h-4 w-4" />,
+                Caption: CalendarCaption,
             }}
             {...props}
         />
     );
 }
 
-function DatePicker({ value, onChange, placeholder = 'Pick a date', className, disabled }) {
+function DatePicker({ value, onChange, placeholder = 'Pick a date', className, disabled, fromYear, toYear }) {
     const [open, setOpen] = React.useState(false);
 
     const selected = React.useMemo(() => {
@@ -93,7 +165,9 @@ function DatePicker({ value, onChange, placeholder = 'Pick a date', className, d
                     mode="single"
                     selected={selected}
                     onSelect={handleSelect}
-                    defaultMonth={selected}
+                    defaultMonth={selected ?? new Date()}
+                    fromYear={fromYear}
+                    toYear={toYear}
                 />
             </PopoverContent>
         </Popover>

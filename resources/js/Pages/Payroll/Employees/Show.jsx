@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { createContext, useContext, useMemo, useRef, useState } from 'react'
 import { Head, router, useForm } from '@inertiajs/react'
 import AppLayout from '@/components/layout/AppLayout'
 import { Button } from '@/components/ui/button'
@@ -9,8 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import {
-    ArrowLeft, Briefcase, CalendarCheck, CheckCircle2, ExternalLink,
-    FileText, GraduationCap, HeartPulse, Laptop, Pencil, Plus, StickyNote, Trash2, UserRound,
+    ArrowLeft, Briefcase, CalendarCheck, Camera, CheckCircle2, ExternalLink,
+    FileText, GraduationCap, HeartPulse, KeyRound, Laptop, Link2, Link2Off,
+    Pencil, Plus, StickyNote, Trash2, UserCheck, UserRound,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
@@ -92,6 +93,26 @@ function SectionHeader({ title, icon: Icon, action, onClick }) {
 const selCls = 'w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring'
 const taCls  = 'w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring min-h-[80px] resize-y'
 
+/* Context so Field can read form state without being defined inside RecordDialog.
+   Defining Field inside RecordDialog gives it a new reference each render,
+   which makes React unmount+remount the input on every keystroke (focus lost). */
+const FieldCtx = createContext(null)
+
+function Field({ name, label, inputType = 'text', required = false, children }) {
+    const { data, setData, errors } = useContext(FieldCtx)
+    return (
+        <div className="space-y-1">
+            <label className="text-sm font-medium">
+                {label}{required && <span className="text-destructive ml-0.5">*</span>}
+            </label>
+            {children ?? (
+                <Input type={inputType} value={data[name] ?? ''} onChange={(e) => setData(name, e.target.value)} />
+            )}
+            {errors[name] && <p className="text-xs text-destructive">{errors[name]}</p>}
+        </div>
+    )
+}
+
 function RecordDialog({ employeeId, type, record, open, onOpenChange, options }) {
     const isEdit = !!record
     const { data, setData, post, put, processing, errors, reset } = useForm(getInitData(type, record))
@@ -119,19 +140,8 @@ function RecordDialog({ employeeId, type, record, open, onOpenChange, options })
         isEdit ? put(url, opts) : post(url, opts)
     }
 
-    const Field = ({ name, label, inputType = 'text', required = false, children }) => (
-        <div className="space-y-1">
-            <label className="text-sm font-medium">
-                {label}{required && <span className="text-destructive ml-0.5">*</span>}
-            </label>
-            {children ?? (
-                <Input type={inputType} value={data[name] ?? ''} onChange={(e) => setData(name, e.target.value)} />
-            )}
-            {errors[name] && <p className="text-xs text-destructive">{errors[name]}</p>}
-        </div>
-    )
-
     return (
+        <FieldCtx.Provider value={{ data, setData, errors }}>
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>{dialogTitle}</DialogTitle></DialogHeader>
@@ -340,6 +350,7 @@ function RecordDialog({ employeeId, type, record, open, onOpenChange, options })
                 </form>
             </DialogContent>
         </Dialog>
+        </FieldCtx.Provider>
     )
 }
 
@@ -356,9 +367,99 @@ function ActionBtns({ onEdit, onDelete }) {
     )
 }
 
-export default function EmployeeShow({ employee, hrOptions = {} }) {
+function CreateAccountForm({ employeeId, roles, employee }) {
+    const { data, setData, post, processing, errors } = useForm({
+        name: `${employee.first_name ?? ''} ${employee.last_name ?? ''}`.trim(),
+        email: employee.email ?? '',
+        password: '',
+        password_confirmation: '',
+        role: 'employee',
+    })
+    return (
+        <form onSubmit={(e) => { e.preventDefault(); post(`/payroll/employees/${employeeId}/account`) }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                    <label className="text-sm font-medium">Full Name <span className="text-destructive">*</span></label>
+                    <Input value={data.name} onChange={(e) => setData('name', e.target.value)} />
+                    {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                </div>
+                <div className="space-y-1">
+                    <label className="text-sm font-medium">Email <span className="text-destructive">*</span></label>
+                    <Input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} />
+                    {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+                </div>
+                <div className="space-y-1">
+                    <label className="text-sm font-medium">Password <span className="text-destructive">*</span></label>
+                    <Input type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} />
+                    {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+                </div>
+                <div className="space-y-1">
+                    <label className="text-sm font-medium">Confirm Password <span className="text-destructive">*</span></label>
+                    <Input type="password" value={data.password_confirmation} onChange={(e) => setData('password_confirmation', e.target.value)} />
+                </div>
+                <div className="col-span-2 space-y-1">
+                    <label className="text-sm font-medium">Role <span className="text-destructive">*</span></label>
+                    <select value={data.role} onChange={(e) => setData('role', e.target.value)} className={selCls}>
+                        {roles.map(r => (
+                            <option key={r} value={r}>{r.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+                        ))}
+                    </select>
+                    {errors.role && <p className="text-xs text-destructive">{errors.role}</p>}
+                </div>
+            </div>
+            <Button type="submit" disabled={processing}>{processing ? 'Creating…' : 'Create Account'}</Button>
+        </form>
+    )
+}
+
+function LinkAccountForm({ employeeId }) {
+    const { data, setData, post, processing, errors } = useForm({ email: '' })
+    return (
+        <form onSubmit={(e) => { e.preventDefault(); post(`/payroll/employees/${employeeId}/account/link`) }} className="space-y-3">
+            <p className="text-sm text-muted-foreground">Link an existing user in this company by their email address.</p>
+            <div className="flex gap-3">
+                <div className="flex-1 space-y-1">
+                    <Input type="email" placeholder="user@company.com" value={data.email} onChange={(e) => setData('email', e.target.value)} />
+                    {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+                </div>
+                <Button type="submit" variant="outline" disabled={processing}>{processing ? 'Linking…' : 'Link Account'}</Button>
+            </div>
+        </form>
+    )
+}
+
+function ResetPasswordForm({ employeeId }) {
+    const { data, setData, post, processing, errors, reset } = useForm({ password: '', password_confirmation: '' })
+    return (
+        <form onSubmit={(e) => { e.preventDefault(); post(`/payroll/employees/${employeeId}/account/reset-password`, { onSuccess: () => reset() }) }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                    <label className="text-sm font-medium">New Password <span className="text-destructive">*</span></label>
+                    <Input type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} />
+                    {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+                </div>
+                <div className="space-y-1">
+                    <label className="text-sm font-medium">Confirm Password <span className="text-destructive">*</span></label>
+                    <Input type="password" value={data.password_confirmation} onChange={(e) => setData('password_confirmation', e.target.value)} />
+                </div>
+            </div>
+            <Button type="submit" disabled={processing}>{processing ? 'Resetting…' : 'Reset Password'}</Button>
+        </form>
+    )
+}
+
+export default function EmployeeShow({ employee, hrOptions = {}, roles = [] }) {
     const [dialogType, setDialogType]     = useState(null)
     const [dialogRecord, setDialogRecord] = useState(null)
+    const photoRef = useRef(null)
+
+    const uploadPhoto = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        const fd = new FormData()
+        fd.append('photo', file)
+        router.post(`/payroll/employees/${employee.id}/photo`, fd, { preserveScroll: true })
+    }
 
     const payslips = employee.payslips   ?? []
     const docs     = employee.documents  ?? []
@@ -399,6 +500,25 @@ export default function EmployeeShow({ employee, hrOptions = {} }) {
                     <Button variant="ghost" size="icon" onClick={() => router.visit('/payroll/employees')}>
                         <ArrowLeft className="w-4 h-4" />
                     </Button>
+
+                    {/* Photo avatar */}
+                    <div className="relative group cursor-pointer shrink-0" onClick={() => photoRef.current?.click()}>
+                        {employee.photo ? (
+                            <img src={`/storage/${employee.photo}`} alt={fullName}
+                                className="h-14 w-14 rounded-full object-cover border-2 border-border" />
+                        ) : (
+                            <div className="h-14 w-14 rounded-full bg-primary/10 border-2 border-border flex items-center justify-center">
+                                <span className="text-lg font-bold text-primary">
+                                    {fullName.split(' ').map(n => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase()}
+                                </span>
+                            </div>
+                        )}
+                        <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <Camera className="h-4 w-4 text-white" />
+                        </div>
+                        <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={uploadPhoto} />
+                    </div>
+
                     <div className="flex-1">
                         <h1 className="text-2xl font-bold">{fullName}</h1>
                         <p className="text-muted-foreground text-sm">{employee.designation ?? 'Employee'} · {dept.name ?? '-'}</p>
@@ -441,6 +561,7 @@ export default function EmployeeShow({ employee, hrOptions = {} }) {
                         <TabsTrigger value="lifecycle">Lifecycle</TabsTrigger>
                         <TabsTrigger value="payroll">Payroll</TabsTrigger>
                         <TabsTrigger value="notes">Notes</TabsTrigger>
+                        <TabsTrigger value="account">Account</TabsTrigger>
                     </TabsList>
 
                     {/* ─ Overview ─ */}
@@ -824,7 +945,8 @@ export default function EmployeeShow({ employee, hrOptions = {} }) {
                                             </TableHeader>
                                             <TableBody>
                                                 {payslips.map(slip => (
-                                                    <TableRow key={slip.id}>
+                                                    <TableRow key={slip.id} className="cursor-pointer hover:bg-muted/50"
+                                                        onClick={() => router.visit(`/payroll/payslips/${slip.id}/pdf`)}>
                                                         <TableCell className="font-mono">{slip.month}</TableCell>
                                                         <TableCell className="text-right font-mono">{formatCurrency(slip.gross_earnings)}</TableCell>
                                                         <TableCell className="text-right font-mono text-red-500">{formatCurrency(slip.total_deductions)}</TableCell>
@@ -872,6 +994,78 @@ export default function EmployeeShow({ employee, hrOptions = {} }) {
                                 }
                             </CardContent>
                         </Card>
+                    </TabsContent>
+                    {/* ─ Account ─ */}
+                    <TabsContent value="account">
+                        <div className="space-y-6 max-w-2xl">
+                            {employee.user ? (
+                                <>
+                                    {/* Linked user details */}
+                                    <Card>
+                                        <SectionHeader title="Linked User Account" icon={UserCheck} />
+                                        <CardContent>
+                                            <InfoRow label="Name"           value={employee.user.name} />
+                                            <InfoRow label="Email"          value={employee.user.email} />
+                                            <InfoRow label="Last Login"     value={employee.user.last_login_at ? formatDate(employee.user.last_login_at) : 'Never'} />
+                                            <InfoRow label="Email Verified" value={employee.user.email_verified_at ? 'Yes' : 'Not verified'} />
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Reset password */}
+                                    <Card>
+                                        <SectionHeader title="Reset Password" icon={KeyRound} />
+                                        <CardContent>
+                                            <ResetPasswordForm employeeId={employee.id} />
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Danger zone */}
+                                    <Card className="border-destructive/40">
+                                        <CardHeader>
+                                            <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div>
+                                                    <p className="font-medium">Unlink User Account</p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Remove login access for this employee. The user account is not deleted.
+                                                    </p>
+                                                </div>
+                                                <Button variant="destructive" size="sm" className="shrink-0" onClick={() => {
+                                                    if (window.confirm('Unlink user account? The employee will lose login access.')) {
+                                                        router.delete(`/payroll/employees/${employee.id}/account`, { preserveScroll: true })
+                                                    }
+                                                }}>
+                                                    <Link2Off className="h-4 w-4 mr-2" /> Unlink
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </>
+                            ) : (
+                                <>
+                                    {/* Create new account */}
+                                    <Card>
+                                        <SectionHeader title="Create Login Account" icon={UserCheck} />
+                                        <CardContent>
+                                            <p className="text-sm text-muted-foreground mb-4">
+                                                Create a new user account and link it to this employee so they can log in to the system.
+                                            </p>
+                                            <CreateAccountForm employeeId={employee.id} roles={roles} employee={employee} />
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Link existing account */}
+                                    <Card>
+                                        <SectionHeader title="Link Existing Account" icon={Link2} />
+                                        <CardContent>
+                                            <LinkAccountForm employeeId={employee.id} />
+                                        </CardContent>
+                                    </Card>
+                                </>
+                            )}
+                        </div>
                     </TabsContent>
                 </Tabs>
             </div>

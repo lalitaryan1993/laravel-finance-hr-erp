@@ -1,27 +1,41 @@
 import { useState } from 'react'
-import { Head, useForm, router } from '@inertiajs/react'
+import { Head, useForm, router, Link } from '@inertiajs/react'
 import AppLayout from '@/components/layout/AppLayout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { UserPlus, Search, MoreVertical, Mail, Phone, Clock, Edit2, Trash2, X } from 'lucide-react'
+import { UserPlus, Search, Clock, Edit2, Trash2, X, ShieldCheck, Briefcase, ExternalLink } from 'lucide-react'
 
-function UserForm({ onSubmit, processing, errors, data, setData, isEdit = false, onClose }) {
+const selCls = 'w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring'
+
+function roleColor(role) {
+    const map = {
+        'super-admin': 'destructive',
+        'admin': 'destructive',
+        'hr-manager': 'warning',
+        'accountant': 'info',
+        'manager': 'secondary',
+        'employee': 'outline',
+    }
+    return map[role] ?? 'secondary'
+}
+
+function UserForm({ onSubmit, processing, errors, data, setData, isEdit = false, onClose, roles }) {
     return (
         <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                    <Label>Full Name *</Label>
+                    <Label>Full Name <span className="text-destructive">*</span></Label>
                     <Input value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="John Doe" />
                     {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                 </div>
                 <div className="space-y-1">
-                    <Label>Email *</Label>
+                    <Label>Email <span className="text-destructive">*</span></Label>
                     <Input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} placeholder="john@company.com" />
                     {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                 </div>
@@ -33,7 +47,17 @@ function UserForm({ onSubmit, processing, errors, data, setData, isEdit = false,
                     <Label>Phone</Label>
                     <Input value={data.phone} onChange={(e) => setData('phone', e.target.value)} placeholder="+91 9876543210" />
                 </div>
-                <div className="space-y-1 col-span-2">
+                <div className="space-y-1">
+                    <Label>Role</Label>
+                    <select value={data.role} onChange={(e) => setData('role', e.target.value)} className={selCls}>
+                        <option value="">— Select role —</option>
+                        {roles.map(r => (
+                            <option key={r} value={r}>{r.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+                        ))}
+                    </select>
+                    {errors.role && <p className="text-xs text-destructive">{errors.role}</p>}
+                </div>
+                <div className="space-y-1">
                     <Label>{isEdit ? 'New Password (leave blank to keep)' : 'Password *'}</Label>
                     <Input type="password" value={data.password} onChange={(e) => setData('password', e.target.value)}
                         placeholder={isEdit ? 'Leave blank to keep current' : 'Min 8 characters'} />
@@ -41,25 +65,26 @@ function UserForm({ onSubmit, processing, errors, data, setData, isEdit = false,
                 </div>
                 <div className="col-span-2 flex items-center gap-3">
                     <Switch checked={data.is_active} onCheckedChange={(v) => setData('is_active', v)} id="is_active" />
-                    <Label htmlFor="is_active">Active user</Label>
+                    <Label htmlFor="is_active">Active (can log in)</Label>
                 </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-                <Button type="submit" loading={processing}>{isEdit ? 'Save Changes' : 'Create User'}</Button>
+                <Button type="submit" disabled={processing}>{isEdit ? 'Save Changes' : 'Create User'}</Button>
             </div>
         </form>
     )
 }
 
-export default function UsersIndex({ users, filters }) {
+export default function UsersIndex({ users, roles = [], filters }) {
     const [search, setSearch] = useState(filters.search ?? '')
     const [createOpen, setCreateOpen] = useState(false)
-    const [editUser, setEditUser] = useState(null)
+    const [editUser, setEditUser]     = useState(null)
     const [deleteUser, setDeleteUser] = useState(null)
 
-    const createForm = useForm({ name: '', email: '', designation: '', phone: '', password: '', is_active: true })
-    const editForm   = useForm({ name: '', email: '', designation: '', phone: '', password: '', is_active: true })
+    const emptyForm = { name: '', email: '', designation: '', phone: '', password: '', is_active: true, role: '' }
+    const createForm = useForm(emptyForm)
+    const editForm   = useForm(emptyForm)
 
     function handleSearch(e) {
         e.preventDefault()
@@ -72,7 +97,15 @@ export default function UsersIndex({ users, filters }) {
     }
 
     function openEdit(user) {
-        editForm.setData({ name: user.name, email: user.email, designation: user.designation ?? '', phone: user.phone ?? '', password: '', is_active: user.is_active })
+        editForm.setData({
+            name: user.name,
+            email: user.email,
+            designation: user.designation ?? '',
+            phone: user.phone ?? '',
+            password: '',
+            is_active: user.is_active,
+            role: user.roles[0] ?? '',
+        })
         setEditUser(user)
     }
 
@@ -97,7 +130,10 @@ export default function UsersIndex({ users, filters }) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold">Users & Roles</h1>
-                        <p className="text-muted-foreground text-sm mt-0.5">Manage team members and their access</p>
+                        <p className="text-muted-foreground text-sm mt-0.5">
+                            Manage system login accounts and their roles. Employee HR profiles are managed in{' '}
+                            <Link href="/payroll/employees" className="text-primary underline underline-offset-2">Payroll → Employees</Link>.
+                        </p>
                     </div>
                     <Button onClick={openCreate}>
                         <UserPlus className="w-4 h-4 mr-2" /> Add User
@@ -128,8 +164,8 @@ export default function UsersIndex({ users, filters }) {
                                 <thead>
                                     <tr className="border-b bg-muted/40">
                                         <th className="text-left px-4 py-3 font-medium text-muted-foreground">User</th>
-                                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Contact</th>
-                                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Designation</th>
+                                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Role</th>
+                                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Linked Employee</th>
                                         <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
                                         <th className="text-left px-4 py-3 font-medium text-muted-foreground">Last Login</th>
                                         <th className="px-4 py-3" />
@@ -140,36 +176,57 @@ export default function UsersIndex({ users, filters }) {
                                         <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                                                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
                                                         {user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                                     </div>
                                                     <div>
                                                         <p className="font-medium">{user.name}</p>
                                                         <p className="text-xs text-muted-foreground">{user.email}</p>
+                                                        {user.designation && (
+                                                            <p className="text-xs text-muted-foreground">{user.designation}</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-muted-foreground">
-                                                {user.phone && (
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Phone className="w-3.5 h-3.5" />
-                                                        <span>{user.phone}</span>
+                                            <td className="px-4 py-3">
+                                                {user.roles.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {user.roles.map(r => (
+                                                            <Badge key={r} variant={roleColor(r)} className="capitalize text-xs">
+                                                                <ShieldCheck className="w-2.5 h-2.5 mr-1" />
+                                                                {r.replace(/-/g, ' ')}
+                                                            </Badge>
+                                                        ))}
                                                     </div>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">No role</span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3 text-muted-foreground">{user.designation ?? '—'}</td>
+                                            <td className="px-4 py-3">
+                                                {user.employee ? (
+                                                    <Link href={`/payroll/employees/${user.employee.id}`}
+                                                        className="flex items-center gap-1.5 text-sm text-primary hover:underline">
+                                                        <Briefcase className="w-3.5 h-3.5" />
+                                                        <span>{user.employee.name}</span>
+                                                        <span className="text-xs text-muted-foreground font-mono">({user.employee.code})</span>
+                                                        <ExternalLink className="w-3 h-3 opacity-50" />
+                                                    </Link>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">—</span>
+                                                )}
+                                            </td>
                                             <td className="px-4 py-3">
                                                 <Badge variant={user.is_active ? 'success' : 'secondary'}>
                                                     {user.is_active ? 'Active' : 'Inactive'}
                                                 </Badge>
                                             </td>
-                                            <td className="px-4 py-3 text-muted-foreground">
+                                            <td className="px-4 py-3 text-muted-foreground text-sm">
                                                 {user.last_login_at ? (
                                                     <div className="flex items-center gap-1.5">
                                                         <Clock className="w-3.5 h-3.5" />
                                                         <span>{user.last_login_at}</span>
                                                     </div>
-                                                ) : '—'}
+                                                ) : <span className="text-xs">Never</span>}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2 justify-end">
@@ -229,6 +286,7 @@ export default function UsersIndex({ users, filters }) {
                         data={createForm.data}
                         setData={createForm.setData}
                         onClose={() => setCreateOpen(false)}
+                        roles={roles}
                     />
                 </DialogContent>
             </Dialog>
@@ -247,6 +305,7 @@ export default function UsersIndex({ users, filters }) {
                         data={editForm.data}
                         setData={editForm.setData}
                         onClose={() => setEditUser(null)}
+                        roles={roles}
                     />
                 </DialogContent>
             </Dialog>

@@ -6,17 +6,23 @@ use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Models\Invoice;
 use App\Models\Expense;
-use App\Models\Customer;
-use App\Models\Vendor;
 use App\Models\Employee;
+use App\Models\Attendance;
+use App\Models\LeaveRequest;
+use App\Models\LeaveAllocation;
 use App\Models\ApprovalRequest;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        // Employees get their own self-service dashboard
+        if ($request->user()->hasRole('employee')) {
+            return $this->employeeDashboard($request);
+        }
+
+
         $companyId = $request->user()->company_id;
         $now       = Carbon::now();
         $startOfMonth = $now->copy()->startOfMonth();
@@ -115,6 +121,95 @@ class DashboardController extends Controller
                 'revenue'  => $monthlyRevenue,
                 'expenses' => $monthlyExpenses,
             ],
+        ]);
+    }
+
+    private function employeeDashboard(Request $request)
+    {
+        $user      = $request->user();
+        $employee  = Employee::where('user_id', $user->id)
+            ->orWhere('email', $user->email)
+            ->with(['department', 'salaryStructure'])
+            ->first();
+
+        if (! $employee) {
+            return Inertia::render('Employee/Dashboard', [
+                'employee'         => null,
+                'attendance'       => [],
+                'leaveBalance'     => [],
+                'recentPayslips'   => [],
+                'recentExpenses'   => [],
+                'pendingTasks'     => [],
+            ]);
+        }
+
+        $now = Carbon::now();
+        $ym  = $now->format('Y-m');
+
+        // Attendance this month
+        $attendance = Attendance::where('employee_id', $employee->id)
+            ->forMonth($ym)
+            ->orderBy('date', 'desc')
+            ->get(['date', 'status', 'check_in', 'check_out', 'working_hours']);
+
+        $attStats = [
+            'present'  => $attendance->where('status', 'present')->count(),
+            'absent'   => $attendance->where('status', 'absent')->count(),
+            'late'     => $attendance->where('status', 'late')->count(),
+            'half_day' => $attendance->where('status', 'half_day')->count(),
+            'total'    => $now->day,
+        ];
+
+        // Leave balance
+        $leaveBalance = LeaveAllocation::where('employee_id', $employee->id)
+            ->where('year', $now->year)
+            ->with('leaveType:id,name')
+            ->get(['leave_type_id', 'allocated_days', 'used_days', 'balance_days'])
+            ->map(fn ($a) => [
+                'type'      => $a->leaveType?->name ?? 'Leave',
+                'allocated' => $a->allocated_days,
+                'used'      => $a->used_days,
+                'remaining' => $a->balance_days,
+            ]);
+
+        // Recent payslips
+        $recentPayslips = $employee->payslips()
+            ->latest('pay_period_start')
+            ->take(6)
+            ->get(['id', 'month', 'pay_period_start', 'gross_earnings', 'total_deductions', 'net_pay', 'status']);
+
+        // Recent leave requests
+        $recentLeave = LeaveRequest::where('employee_id', $employee->id)
+            ->with('leaveType:id,name')
+            ->latest()
+            ->take(5)
+            ->get(['id', 'leave_type_id', 'from_date', 'to_date', 'days', 'status', 'reason']);
+
+        // Recent expense claims
+        $recentExpenses = Expense::where('submitted_by', $user->id)
+            ->orWhere('employee_id', $user->id)
+            ->latest()
+            ->take(5)
+            ->get(['id', 'expense_number', 'description', 'total_amount', 'status', 'expense_date']);
+
+        // Pending lifecycle tasks
+        $pendingTasks = $employee->lifecycleTasks()
+            ->whereNotIn('status', ['completed', 'skipped'])
+            ->orderBy('due_date')
+            ->take(5)
+            ->get(['id', 'title', 'type', 'due_date', 'status']);
+
+        return Inertia::render('Employee/Dashboard', [
+            'employee'       => array_merge($employee->toArray(), [
+                'full_name' => "{$employee->first_name} {$employee->last_name}",
+            ]),
+            'attStats'       => $attStats,
+            'recentAttendance' => $attendance->take(7)->values(),
+            'leaveBalance'   => $leaveBalance,
+            'recentPayslips' => $recentPayslips,
+            'recentLeave'    => $recentLeave,
+            'recentExpenses' => $recentExpenses,
+            'pendingTasks'   => $pendingTasks,
         ]);
     }
 }

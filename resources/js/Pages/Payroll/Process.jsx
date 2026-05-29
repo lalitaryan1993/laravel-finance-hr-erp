@@ -1,20 +1,18 @@
 import { useState } from 'react'
-import { Head, router, useForm } from '@inertiajs/react'
+import { Head, router } from '@inertiajs/react'
 import AppLayout from '@/components/layout/AppLayout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { PlayCircle, CheckCircle2 } from 'lucide-react'
+import { PlayCircle } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
 export default function PayrollProcess({ employees = [], month, payrollRuns = [] }) {
     const [selected, setSelected] = useState([])
-    const { data, setData, post, processing } = useForm({
-        month: month ?? '',
-        employee_ids: [],
-    })
+    const [payMonth, setPayMonth] = useState(month ?? '')
+    const [processing, setProcessing] = useState(false)
 
     const toggleAll = (e) => {
         setSelected(e.target.checked ? employees.map((emp) => emp.id) : [])
@@ -25,9 +23,12 @@ export default function PayrollProcess({ employees = [], month, payrollRuns = []
     }
 
     const runPayroll = () => {
-        post('/payroll/run', {
-            data: { month: data.month, employee_ids: selected.length ? selected : [] },
-        })
+        if (!payMonth) return
+        setProcessing(true)
+        router.post('/payroll/run', {
+            month: payMonth,
+            employee_ids: selected,
+        }, { onFinish: () => setProcessing(false) })
     }
 
     const statusVariant = { completed: 'success', processing: 'warning', failed: 'destructive' }
@@ -48,9 +49,9 @@ export default function PayrollProcess({ employees = [], month, payrollRuns = []
                     <CardContent className="flex items-end gap-4">
                         <div className="space-y-1">
                             <label className="text-sm font-medium">Payroll Month</label>
-                            <Input type="month" value={data.month} onChange={(e) => setData('month', e.target.value)} className="w-44" />
+                            <Input type="month" value={payMonth} onChange={(e) => setPayMonth(e.target.value)} className="w-44" />
                         </div>
-                        <Button onClick={runPayroll} loading={processing} className="gap-2">
+                        <Button onClick={runPayroll} disabled={processing || !payMonth} className="gap-2">
                             <PlayCircle className="w-4 h-4" />
                             Run Payroll {selected.length ? `(${selected.length} employees)` : '(All)'}
                         </Button>

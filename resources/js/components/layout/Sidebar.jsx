@@ -9,7 +9,7 @@ import {
     ChevronDown, ChevronRight, LogOut, Moon, Sun, Search, Zap,
     Package, ShoppingCart, Truck, Calculator, Wallet, ArrowLeftRight,
     TrendingUp, Shield, Database, Wrench, ChevronLeft, Bot,
-    CalendarCheck, CalendarDays, UmbrellaOff, ClipboardList,
+    CalendarCheck, CalendarDays, UmbrellaOff, ClipboardList, UserRound,
 } from 'lucide-react';
 
 const navItems = [
@@ -86,6 +86,7 @@ const navItems = [
             { label: 'Leave Balance', href: '/payroll/leave/balance', icon: CalendarDays },
             { label: 'Attendance Report', href: '/payroll/attendance/report', icon: BarChart3 },
             { label: 'Reports', href: '/payroll/reports', icon: BarChart3 },
+            { label: 'Manage Users', href: '/settings/users', icon: Shield, permission: 'settings.manage_users' },
         ],
     },
     {
@@ -155,6 +156,19 @@ const navItems = [
         href: '/ai',
         permission: 'ai.use',
         badge: 'NEW',
+    },
+    {
+        label: 'Self Service',
+        icon: UserRound,
+        roles: ['employee'],
+        children: [
+            { label: 'My Dashboard',  href: '/dashboard',        icon: LayoutDashboard },
+            { label: 'My Profile',    href: '/profile',           icon: UserRound },
+            { label: 'My Payslips',   href: '/me/payslips',       icon: FileText },
+            { label: 'My Leave',      href: '/me/leave',          icon: UmbrellaOff },
+            { label: 'My Attendance', href: '/me/attendance',     icon: CalendarCheck },
+            { label: 'My Expenses',   href: '/expenses',          icon: CreditCard },
+        ],
     },
     {
         label: 'Approvals',
@@ -274,10 +288,18 @@ function NavItem({ item, collapsed, depth = 0 }) {
 export default function Sidebar({ collapsed, onToggle }) {
     const { auth } = usePage().props;
 
-    const perms = new Set(auth?.permissions ?? []);
-    const can = (perm) => !perm || perms.has(perm);
+    const perms     = new Set(auth?.permissions ?? []);
+    const userRole  = auth?.role ?? '';
+    const can       = (perm)  => !perm  || perms.has(perm);
+    const hasRole   = (roles) => !roles || roles.includes(userRole);
 
-    const visibleItems = navItems.filter((item) => can(item.permission));
+    const visibleItems = navItems
+        .filter((item) => can(item.permission) && hasRole(item.roles))
+        .map((item) =>
+            item.children
+                ? { ...item, children: item.children.filter((c) => can(c.permission) && hasRole(c.roles)) }
+                : item
+        );
 
     return (
         <TooltipProvider delayDuration={0}>

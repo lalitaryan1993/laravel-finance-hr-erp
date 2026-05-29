@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -14,7 +16,14 @@ class UserController extends Controller
     {
         $companyId = $request->user()->company_id;
 
+        // Map user_id → employee for this company
+        $employeeByUserId = Employee::where('company_id', $companyId)
+            ->whereNotNull('user_id')
+            ->get(['id', 'user_id', 'first_name', 'last_name', 'employee_code'])
+            ->keyBy('user_id');
+
         $users = User::where('company_id', $companyId)
+            ->with('roles:id,name')
             ->when($request->search, fn ($q, $v) =>
                 $q->where(fn ($q) =>
                     $q->where('name', 'like', "%{$v}%")
@@ -23,20 +32,29 @@ class UserController extends Controller
             ->latest()
             ->paginate(20)
             ->withQueryString()
-            ->through(fn ($u) => [
-                'id'           => $u->id,
-                'name'         => $u->name,
-                'email'        => $u->email,
-                'phone'        => $u->phone,
-                'designation'  => $u->designation,
-                'is_active'    => $u->is_active,
-                'last_login_at'=> $u->last_login_at?->diffForHumans(),
-                'created_at'   => $u->created_at->toDateString(),
-                'roles'        => [],
-            ]);
+            ->through(function ($u) use ($employeeByUserId) {
+                $emp = $employeeByUserId->get($u->id);
+                return [
+                    'id'            => $u->id,
+                    'name'          => $u->name,
+                    'email'         => $u->email,
+                    'phone'         => $u->phone,
+                    'designation'   => $u->designation,
+                    'is_active'     => $u->is_active,
+                    'last_login_at' => $u->last_login_at?->diffForHumans(),
+                    'created_at'    => $u->created_at->toDateString(),
+                    'roles'         => $u->roles->pluck('name')->values()->all(),
+                    'employee'      => $emp ? [
+                        'id'   => $emp->id,
+                        'name' => trim("{$emp->first_name} {$emp->last_name}"),
+                        'code' => $emp->employee_code,
+                    ] : null,
+                ];
+            });
 
         return Inertia::render('Settings/Users', [
             'users'   => $users,
+            'roles'   => Role::pluck('name')->values()->all(),
             'filters' => $request->only(['search', 'status']),
         ]);
     }
@@ -50,9 +68,10 @@ class UserController extends Controller
             'designation' => 'nullable|string|max:100',
             'phone'       => 'nullable|string|max:20',
             'is_active'   => 'boolean',
+            'role'        => 'nullable|string|exists:roles,name',
         ]);
 
-        User::create([
+        $user = User::create([
             'name'        => $data['name'],
             'email'       => $data['email'],
             'password'    => Hash::make($data['password']),
@@ -61,6 +80,10 @@ class UserController extends Controller
             'is_active'   => $data['is_active'] ?? true,
             'company_id'  => $request->user()->company_id,
         ]);
+
+        if (!empty($data['role'])) {
+            $user->assignRole($data['role']);
+        }
 
         return back()->with('success', 'User created successfully.');
     }
@@ -74,6 +97,7 @@ class UserController extends Controller
             'phone'       => 'nullable|string|max:20',
             'is_active'   => 'boolean',
             'password'    => 'nullable|string|min:8',
+            'role'        => 'nullable|string|exists:roles,name',
         ]);
 
         $update = [
@@ -89,6 +113,10 @@ class UserController extends Controller
         }
 
         $user->update($update);
+
+        if (!empty($data['role'])) {
+            $user->syncRoles([$data['role']]);
+        }
 
         return back()->with('success', 'User updated.');
     }
