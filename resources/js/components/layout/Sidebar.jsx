@@ -22,6 +22,7 @@ const navItems = [
     {
         label: 'Accounting',
         icon: BookOpen,
+        permission: 'accounting.view',
         badge: null,
         children: [
             { label: 'Chart of Accounts', href: '/accounting/accounts', icon: Database },
@@ -34,6 +35,7 @@ const navItems = [
     {
         label: 'Invoicing',
         icon: Receipt,
+        permission: 'invoicing.view',
         children: [
             { label: 'Sales Invoices', href: '/invoices/sales', icon: Receipt },
             { label: 'Purchase Invoices', href: '/invoices/purchase', icon: ShoppingCart },
@@ -45,6 +47,7 @@ const navItems = [
     {
         label: 'Expenses',
         icon: CreditCard,
+        permission: 'expenses.view',
         children: [
             { label: 'All Expenses', href: '/expenses', icon: CreditCard },
             { label: 'Employee Claims', href: '/expenses/claims', icon: Users },
@@ -55,6 +58,7 @@ const navItems = [
     {
         label: 'Banking',
         icon: Wallet,
+        permission: 'banking.view',
         children: [
             { label: 'Bank Accounts', href: '/banking/accounts', icon: Building2 },
             { label: 'Transactions', href: '/banking/transactions', icon: ArrowLeftRight },
@@ -65,6 +69,7 @@ const navItems = [
     {
         label: 'Payroll & HR',
         icon: DollarSign,
+        permission: 'payroll.view',
         children: [
             { label: 'HR Dashboard', href: '/payroll', icon: LayoutDashboard },
             { label: 'Employees', href: '/payroll/employees', icon: Users },
@@ -86,6 +91,7 @@ const navItems = [
     {
         label: 'Tax',
         icon: Calculator,
+        permission: 'tax.view',
         children: [
             { label: 'GST', href: '/tax/gst', icon: Calculator },
             { label: 'TDS', href: '/tax/tds', icon: Calculator },
@@ -96,6 +102,7 @@ const navItems = [
     {
         label: 'Assets',
         icon: Package,
+        permission: 'assets.view',
         children: [
             { label: 'Asset Register', href: '/assets', icon: Package },
             { label: 'Depreciation', href: '/assets/depreciation', icon: TrendingUp },
@@ -105,6 +112,7 @@ const navItems = [
     {
         label: 'Vendors',
         icon: Truck,
+        permission: 'vendors.view',
         children: [
             { label: 'All Vendors', href: '/vendors', icon: Truck },
             { label: 'Purchase Orders', href: '/vendors/purchase-orders', icon: ShoppingCart },
@@ -114,6 +122,7 @@ const navItems = [
     {
         label: 'Customers',
         icon: Users,
+        permission: 'customers.view',
         children: [
             { label: 'All Customers', href: '/customers', icon: Users },
             { label: 'Outstanding', href: '/customers/outstanding', icon: CreditCard },
@@ -122,6 +131,7 @@ const navItems = [
     {
         label: 'Budget',
         icon: PieChart,
+        permission: 'budget.view',
         children: [
             { label: 'Budgets', href: '/budget', icon: PieChart },
             { label: 'Forecasting', href: '/budget/forecast', icon: TrendingUp },
@@ -131,6 +141,7 @@ const navItems = [
     {
         label: 'Reports',
         icon: BarChart3,
+        permission: 'reports.view',
         children: [
             { label: 'P&L Statement', href: '/reports/pnl', icon: BarChart3 },
             { label: 'Balance Sheet', href: '/reports/balance-sheet', icon: FileText },
@@ -142,6 +153,7 @@ const navItems = [
         label: 'AI Assistant',
         icon: Bot,
         href: '/ai',
+        permission: 'ai.use',
         badge: 'NEW',
     },
     {
@@ -153,11 +165,12 @@ const navItems = [
         label: 'Companies',
         icon: Building2,
         href: '/companies',
-        adminOnly: true,
+        permission: 'settings.manage_company',
     },
     {
         label: 'Settings',
         icon: Settings,
+        permission: 'settings.view',
         children: [
             { label: 'General', href: '/settings', icon: Settings },
             { label: 'Users & Roles', href: '/settings/users', icon: Users },
@@ -261,6 +274,11 @@ function NavItem({ item, collapsed, depth = 0 }) {
 export default function Sidebar({ collapsed, onToggle }) {
     const { auth } = usePage().props;
 
+    const perms = new Set(auth?.permissions ?? []);
+    const can = (perm) => !perm || perms.has(perm);
+
+    const visibleItems = navItems.filter((item) => can(item.permission));
+
     return (
         <TooltipProvider delayDuration={0}>
             <aside
@@ -287,7 +305,7 @@ export default function Sidebar({ collapsed, onToggle }) {
 
                 {/* Navigation */}
                 <nav className="flex-1 overflow-y-auto p-2 space-y-0.5 no-scrollbar">
-                    {navItems.map((item) => (
+                    {visibleItems.map((item) => (
                         <NavItem key={item.label} item={item} collapsed={collapsed} />
                     ))}
                 </nav>
