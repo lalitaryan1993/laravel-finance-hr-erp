@@ -1,0 +1,83 @@
+import { Head, router, useForm } from '@inertiajs/react'
+import AppLayout from '@/components/layout/AppLayout'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ArrowLeft } from 'lucide-react'
+
+export default function AccountEdit({ account, groups = [] }) {
+    const { data, setData, put, processing, errors } = useForm({
+        name: account.name ?? '',
+        account_group_id: account.account_group_id ?? '',
+        description: account.description ?? '',
+        is_active: account.is_active ?? true,
+    })
+
+    const submit = (e) => {
+        e.preventDefault()
+        put(`/accounting/accounts/${account.id}`)
+    }
+
+    return (
+        <AppLayout>
+            <Head title={`Edit — ${account.name}`} />
+            <div className="space-y-6 max-w-xl">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" onClick={() => router.visit(`/accounting/accounts/${account.id}`)}>
+                        <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold">Edit Account</h1>
+                        <p className="text-muted-foreground text-sm font-mono">{account.code} · {account.name}</p>
+                    </div>
+                </div>
+
+                <form onSubmit={submit}>
+                    <Card>
+                        <CardHeader><CardTitle>Account Details</CardTitle></CardHeader>
+                        <CardContent className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2 space-y-1">
+                                <label className="text-sm font-medium">Account Name *</label>
+                                <Input value={data.name} onChange={(e) => setData('name', e.target.value)} />
+                                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium">Account Code</label>
+                                <Input value={account.code} disabled className="font-mono opacity-60" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium">Type</label>
+                                <Input value={account.type} disabled className="capitalize opacity-60" />
+                            </div>
+                            <div className="col-span-2 space-y-1">
+                                <label className="text-sm font-medium">Account Group *</label>
+                                <select value={data.account_group_id} onChange={(e) => setData('account_group_id', e.target.value)}
+                                    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                                    <option value="">Select group</option>
+                                    {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                                </select>
+                                {errors.account_group_id && <p className="text-xs text-destructive">{errors.account_group_id}</p>}
+                            </div>
+                            <div className="col-span-2 space-y-1">
+                                <label className="text-sm font-medium">Description</label>
+                                <textarea value={data.description} onChange={(e) => setData('description', e.target.value)}
+                                    rows={2} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none" />
+                            </div>
+                            <div className="space-y-1 flex items-end pb-1">
+                                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                    <input type="checkbox" checked={data.is_active}
+                                        onChange={(e) => setData('is_active', e.target.checked)} />
+                                    Active account
+                                </label>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <div className="flex justify-end gap-3 mt-6">
+                        <Button type="button" variant="outline" onClick={() => router.visit(`/accounting/accounts/${account.id}`)}>Cancel</Button>
+                        <Button type="submit" loading={processing}>Save Changes</Button>
+                    </div>
+                </form>
+            </div>
+        </AppLayout>
+    )
+}

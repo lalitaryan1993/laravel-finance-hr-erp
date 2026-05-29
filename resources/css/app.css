@@ -1,0 +1,203 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        /* — Surface — */
+        --background: 210 40% 98%;
+        --foreground: 222 47% 11%;
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 11%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222 47% 11%;
+
+        /* — Brand — */
+        --primary: 221 83% 53%;           /* #2563EB – enterprise blue */
+        --primary-foreground: 0 0% 100%;
+        --secondary: 213 53% 24%;         /* #1E3A5F – navy depth */
+        --secondary-foreground: 0 0% 100%;
+
+        /* — Muted / Neutral — */
+        --muted: 214 32% 95%;
+        --muted-foreground: 215 16% 47%;
+        --accent: 214 95% 96%;
+        --accent-foreground: 221 83% 45%;
+
+        /* — Semantic — */
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --success: 158 64% 35%;
+        --success-foreground: 0 0% 100%;
+        --warning: 38 92% 50%;
+        --warning-foreground: 0 0% 100%;
+
+        /* — Chrome — */
+        --border: 214 32% 91%;
+        --input: 214 32% 91%;
+        --ring: 221 83% 53%;
+        --radius: 0.5rem;
+
+        /* — Sidebar — */
+        --sidebar: 0 0% 100%;
+        --sidebar-foreground: 222 47% 11%;
+        --sidebar-border: 214 32% 91%;
+        --sidebar-accent: 214 95% 96%;
+        --sidebar-accent-foreground: 221 83% 45%;
+        --sidebar-active-bg: 221 83% 96%;
+        --sidebar-active-border: 221 83% 53%;
+        --sidebar-active-text: 221 83% 40%;
+    }
+
+    .dark {
+        /* — Surface — */
+        --background: 222 47% 7%;
+        --foreground: 210 40% 96%;
+        --card: 222 47% 9%;
+        --card-foreground: 210 40% 96%;
+        --popover: 222 47% 9%;
+        --popover-foreground: 210 40% 96%;
+
+        /* — Brand — */
+        --primary: 217 91% 60%;           /* #3B82F6 – lighter in dark */
+        --primary-foreground: 0 0% 100%;
+        --secondary: 213 32% 20%;
+        --secondary-foreground: 210 40% 96%;
+
+        /* — Muted / Neutral — */
+        --muted: 217 32% 17%;
+        --muted-foreground: 215 20% 65%;
+        --accent: 217 33% 17%;
+        --accent-foreground: 217 91% 70%;
+
+        /* — Semantic — */
+        --destructive: 0 62% 55%;
+        --destructive-foreground: 0 0% 100%;
+        --success: 158 64% 40%;
+        --success-foreground: 0 0% 100%;
+        --warning: 38 92% 55%;
+        --warning-foreground: 0 0% 100%;
+
+        /* — Chrome — */
+        --border: 217 32% 17%;
+        --input: 217 32% 17%;
+        --ring: 217 91% 60%;
+
+        /* — Sidebar — */
+        --sidebar: 222 47% 5%;
+        --sidebar-foreground: 210 40% 90%;
+        --sidebar-border: 217 32% 14%;
+        --sidebar-accent: 217 33% 14%;
+        --sidebar-accent-foreground: 217 91% 70%;
+        --sidebar-active-bg: 221 83% 18%;
+        --sidebar-active-border: 217 91% 60%;
+        --sidebar-active-text: 217 91% 75%;
+    }
+
+    * { @apply border-border; }
+    body {
+        @apply bg-background text-foreground antialiased;
+        font-family: 'IBM Plex Sans', 'Inter', system-ui, sans-serif;
+        font-feature-settings: 'kern' 1, 'liga' 1;
+    }
+
+    /* Thin, elegant scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { @apply bg-transparent; }
+    ::-webkit-scrollbar-thumb { @apply bg-border rounded-full hover:bg-muted-foreground/30; }
+    * { scrollbar-width: thin; scrollbar-color: hsl(var(--border)) transparent; }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+
+    /* Financial number rendering — tabular figures prevent layout shift */
+    .tabular { font-variant-numeric: tabular-nums; }
+
+    /* Focus ring — consistent blue across all interactive elements */
+    :focus-visible {
+        outline: 2px solid hsl(var(--ring));
+        outline-offset: 2px;
+    }
+}
+
+@layer components {
+    /* ── Skeleton / shimmer ── */
+    .skeleton { @apply animate-pulse bg-muted rounded; }
+    .shimmer-loading {
+        background: linear-gradient(90deg,
+            hsl(var(--muted)) 25%,
+            hsl(var(--muted) / 0.5) 50%,
+            hsl(var(--muted)) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+    }
+
+    /* ── Finance cards ── */
+    .finance-card {
+        @apply bg-card rounded-xl border shadow-sm p-6 transition-shadow duration-200 hover:shadow-md;
+    }
+    .kpi-card { @apply finance-card flex items-start gap-4; }
+
+    /* ── Semantic badges ── */
+    .badge-success {
+        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+               bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400;
+    }
+    .badge-danger {
+        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+               bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400;
+    }
+    .badge-warning {
+        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+               bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400;
+    }
+    .badge-info {
+        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+               bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400;
+    }
+    .badge-neutral {
+        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+               bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300;
+    }
+
+    /* ── Page enter animation ── */
+    .page-enter { animation: fade-in 0.2s ease-out; }
+
+    /* ── Glass surface ── */
+    .glass { @apply bg-white/80 dark:bg-black/40 backdrop-blur-md border border-border/50; }
+}
+
+@layer utilities {
+    .text-balance { text-wrap: balance; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Financial/data display utilities */
+    .font-financial { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    .text-positive { @apply text-emerald-600 dark:text-emerald-400; }
+    .text-negative { @apply text-red-600 dark:text-red-400; }
+    .text-neutral  { @apply text-muted-foreground; }
+}
+
+/* ── Keyframes ── */
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+}
+
+@keyframes shimmer {
+    from { background-position: -200% 0; }
+    to   { background-position: 200% 0; }
+}
